@@ -93,13 +93,15 @@ export async function renderStaticMap(
       const image = await loadImage(buffer);
       const drawX = tileX * tileRenderSize - topLeftX;
       const drawY = tileY * tileRenderSize - topLeftY;
+      const drawX2 = (tileX + 1) * tileRenderSize - topLeftX;
+      const drawY2 = (tileY + 1) * tileRenderSize - topLeftY;
 
       ctx.drawImage(
         image,
         Math.round(drawX),
         Math.round(drawY),
-        Math.round(tileRenderSize),
-        Math.round(tileRenderSize),
+        Math.round(drawX2) - Math.round(drawX),
+        Math.round(drawY2) - Math.round(drawY),
       );
     }
   }
