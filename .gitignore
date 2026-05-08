@@ -1,0 +1,5 @@
+dist
+node_modules
+tests/__artifacts__/
+*.local
+*.local.*
