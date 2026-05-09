@@ -156,6 +156,12 @@ export function computeBbox(
   }
 
   if (!Number.isFinite(minX)) return null;
+
+  minX -= options.padding;
+  maxX += options.padding;
+  minY -= options.padding;
+  maxY += options.padding;
+
   return { minX, maxX, minY, maxY };
 }
 
