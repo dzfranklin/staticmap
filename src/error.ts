@@ -3,6 +3,16 @@ import { HttpError } from "./parser.js";
 import express from "express";
 import { logger } from "./logger.js";
 
+export function handleJsonError(error: unknown, res: express.Response): void {
+  const status = error instanceof HttpError ? error.status : 500;
+  const message =
+    error instanceof HttpError ? error.message : "Internal server error";
+  if (!(error instanceof HttpError)) {
+    logger.error({ error }, "Unhandled error");
+  }
+  res.status(status).setHeader("Content-Type", "application/json").json({ error: message });
+}
+
 export function handleError(error: unknown, res: express.Response): void {
   const status = error instanceof HttpError ? error.status : 500;
   const message =

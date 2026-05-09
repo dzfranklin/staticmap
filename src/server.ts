@@ -7,7 +7,8 @@ import { z } from "zod";
 import { buildOptions, parsePath, HttpError } from "./parser.js";
 import { renderStaticMap, type StaticMapSource } from "./staticmap.js";
 import { logger } from "./logger.js";
-import { handleError } from "./error.js";
+import { handleError, handleJsonError } from "./error.js";
+import { computePages } from "./pages.js";
 
 const sourcesFile =
   process.env.SOURCES_FILE ?? path.resolve(process.cwd(), "sources.json");
@@ -67,6 +68,23 @@ app.get(/^\/map:/, async (req, res) => {
     res.status(200).send(buffer);
   } catch (error) {
     handleError(error, res);
+  }
+});
+
+app.get(/^\/pages\/map:/, async (req, res) => {
+  try {
+    const sources = await loadSources(sourcesFile);
+    const { sourceKey, commands } = parsePath(req.path.slice("/pages".length));
+    const source = sources[sourceKey];
+    if (!source) {
+      throw new HttpError(400, `Unknown source: ${sourceKey}`);
+    }
+    const result = computePages(sourceKey, commands, source);
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24);
+    res.status(200).json(result);
+  } catch (error) {
+    handleJsonError(error, res);
   }
 });
 

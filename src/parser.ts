@@ -53,6 +53,11 @@ export interface CommandCenter {
   lat: number;
 }
 
+export interface CommandPageOverlap {
+  type: "pageOverlap";
+  value: number;
+}
+
 export type Command =
   | CommandStroke
   | CommandWidth
@@ -62,7 +67,8 @@ export type Command =
   | CommandSize
   | CommandPadding
   | CommandZoom
-  | CommandCenter;
+  | CommandCenter
+  | CommandPageOverlap;
 
 export class HttpError extends Error {
   status: number;
@@ -105,6 +111,7 @@ export function buildOptions(
   let padding = 0;
   let zoom: number | undefined;
   let center: { lng: number; lat: number } | undefined;
+  let pageOverlap: number | undefined;
 
   let stroke = "#000000";
   let width = 4;
@@ -147,6 +154,9 @@ export function buildOptions(
       case "center":
         center = { lng: command.lng, lat: command.lat };
         break;
+      case "pageOverlap":
+        pageOverlap = command.value;
+        break;
       default:
         assertNever(command);
     }
@@ -159,6 +169,7 @@ export function buildOptions(
     zoom,
     center,
     lines,
+    pageOverlap,
   };
 }
 
@@ -241,6 +252,12 @@ function parseCommandSegment(segment: string): Command {
       const lat = parseNumber(coords[1]!, "center.lat");
       return { type: "center", lng, lat };
     }
+    case "pageOverlap": {
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected pageOverlap value");
+      }
+      return { type: "pageOverlap", value: parseNumber(parts[0], "pageOverlap") };
+    }
     default:
       throw new HttpError(400, `Unknown command: ${name}`);
   }
@@ -268,4 +285,38 @@ function parseNumber(raw: string, label: string): number {
 
 function assertNever(value: never): never {
   throw new HttpError(400, `Unexpected command: ${JSON.stringify(value)}`);
+}
+
+export function serializePath(sourceKey: string, commands: Command[]): string {
+  const segments = commands.map(serializeCommand);
+  return `/map:${sourceKey}/${segments.join("/")}`;
+}
+
+function serializeCommand(command: Command): string {
+  switch (command.type) {
+    case "stroke":
+      return `stroke:${encodeURIComponent(command.value)}`;
+    case "width":
+      return `width:${command.value}`;
+    case "border":
+      return `border:${encodeURIComponent(command.value)}`;
+    case "borderWidth":
+      return `borderWidth:${command.value}`;
+    case "line":
+      return command.precision !== undefined
+        ? `line:${command.precision}:${encodeURIComponent(command.value)}`
+        : `line:${encodeURIComponent(command.value)}`;
+    case "size":
+      return `size:${command.width}x${command.height}`;
+    case "padding":
+      return `padding:${command.value}`;
+    case "zoom":
+      return `zoom:${command.value}`;
+    case "center":
+      return `center:${command.lng.toFixed(6)},${command.lat.toFixed(6)}`;
+    case "pageOverlap":
+      return `pageOverlap:${command.value}`;
+    default:
+      assertNever(command);
+  }
 }

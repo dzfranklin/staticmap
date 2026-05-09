@@ -43,12 +43,14 @@ export interface StaticMapOptions {
     lat: number;
   };
   lines: LineLayer[];
+  pageOverlap?: number;
 }
 
 // All pixel coordinates are in source tile pixels (1 tile = sourceTileSize px).
 // internalScale is applied separately in renderStaticMap for retina canvas rendering.
-interface Crs {
+export interface Crs {
   lngLatToPixel(lng: number, lat: number, zoom: number): { x: number; y: number };
+  pixelToLngLat(x: number, y: number, zoom: number): { lng: number; lat: number };
   tilePixelSize(zoom: number, sourceTileSize: number): number;
   normalizeTileCoord(x: number, y: number, zoom: number): { x: number; y: number } | null;
 }
@@ -64,6 +66,13 @@ const epsg3857Crs: Crs = {
       tileSize *
       Math.pow(2, zoom);
     return { x, y };
+  },
+  pixelToLngLat(x, y, zoom) {
+    const scale = 256 * Math.pow(2, zoom);
+    const lng = (x / scale) * 360 - 180;
+    const n = Math.PI - (2 * Math.PI * y) / scale;
+    const lat = (180 / Math.PI) * Math.atan(Math.sinh(n));
+    return { lng, lat };
   },
   tilePixelSize(zoom, sourceTileSize) {
     const tileZ = Math.round(zoom);
@@ -89,6 +98,16 @@ const epsg27700Crs: Crs = {
       y: (EPSG27700_ORIGIN[1] - northing) / res,
     };
   },
+  pixelToLngLat(x, y, zoom) {
+    const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
+    if (res === undefined) {
+      throw new Error(`Invalid EPSG:27700 zoom index: ${zoom}`);
+    }
+    const easting = x * res + EPSG27700_ORIGIN[0];
+    const northing = EPSG27700_ORIGIN[1] - y * res;
+    const [lng, lat] = proj4("EPSG:27700", "EPSG:4326", [easting, northing]);
+    return { lng, lat };
+  },
   tilePixelSize(_zoom, sourceTileSize) {
     return sourceTileSize;
   },
@@ -97,9 +116,29 @@ const epsg27700Crs: Crs = {
   },
 };
 
-function getCrs(source: StaticMapSource): Crs {
+export function getCrs(source: StaticMapSource): Crs {
   if (source.crs === "EPSG:27700") return epsg27700Crs;
   return epsg3857Crs;
+}
+
+export function computeBbox(
+  options: StaticMapOptions & { zoom: number },
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  const crs = getCrs(options.source);
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+
+  for (const line of options.lines) {
+    for (const [lng, lat] of line.path) {
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+      const { x, y } = crs.lngLatToPixel(lng, lat, options.zoom);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (!Number.isFinite(minX)) return null;
+  return { minX, maxX, minY, maxY };
 }
 
 export async function renderStaticMap(
@@ -200,7 +239,7 @@ export function decodeLine(encoded: string, precision?: number): LngLat[] {
   return decodePolyline(encoded, precision);
 }
 
-function resolveView(
+export function resolveView(
   options: StaticMapOptions,
   sourceTileSize: number,
 ): { zoom: number; center: { lng: number; lat: number } } {
