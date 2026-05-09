@@ -24,8 +24,7 @@ Contains OS data © Crown copyright and database rights 2026
 
 <img width="504" height="627" alt="Two pages" src="https://github.com/user-attachments/assets/d9194a09-dd32-478d-9f47-5938840e70f5" />
 
-
-Contains OS data © Crown copyright and database rights 2026
+Map tiles © Thunderforest © OpenStreetMap
 
 sources.json:
 
