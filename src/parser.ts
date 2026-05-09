@@ -4,6 +4,7 @@ import {
   type StaticMapSource,
   type LineLayer,
 } from "./staticmap.js";
+import { defaultStyle, type Style } from "./style.js";
 
 export interface CommandStroke {
   type: "stroke";
@@ -113,33 +114,30 @@ export function buildOptions(
   let center: { lng: number; lat: number } | undefined;
   let pageOverlap: number | undefined;
 
-  let stroke = "#000000";
-  let width = 4;
-  let borderStroke: string | undefined;
-  let borderWidth: number | undefined;
+  let style: Style = defaultStyle();
 
   const lines: LineLayer[] = [];
 
   for (const command of commands) {
     switch (command.type) {
       case "stroke":
-        stroke = command.value;
+        style = { ...style, stroke: command.value };
         break;
       case "width":
-        width = command.value;
+        style = { ...style, width: command.value };
         break;
       case "border":
-        borderStroke = command.value;
+        style = { ...style, borderStroke: command.value };
         break;
       case "borderWidth":
-        borderWidth = command.value;
+        style = { ...style, borderWidth: command.value };
         break;
       case "line": {
         const path = decodeLine(command.value, command.precision);
         if (path.length < 2) {
           throw new HttpError(400, "Polyline must contain at least two points");
         }
-        lines.push({ path, stroke, width, borderStroke, borderWidth });
+        lines.push({ path, style: { ...style } });
         break;
       }
       case "size":

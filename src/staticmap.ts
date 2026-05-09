@@ -1,6 +1,8 @@
 import { createCanvas, loadImage } from "canvas";
 import { decodePolyline, type LngLat } from "./polyline.js";
 import proj4 from "proj4";
+import { buildScene } from "./scene.js";
+import type { Style } from "./style.js";
 
 const MERCATOR_MAX_LAT = 85.05112878;
 
@@ -24,10 +26,7 @@ export interface StaticMapSource {
 
 export interface LineLayer {
   path: LngLat[];
-  stroke: string;
-  width: number;
-  borderStroke?: string;
-  borderWidth?: number;
+  style: Style;
 }
 
 export interface StaticMapOptions {
@@ -49,16 +48,31 @@ export interface StaticMapOptions {
 // All pixel coordinates are in source tile pixels (1 tile = sourceTileSize px).
 // internalScale is applied separately in renderStaticMap for retina canvas rendering.
 export interface Crs {
-  lngLatToPixel(lng: number, lat: number, zoom: number): { x: number; y: number };
-  pixelToLngLat(x: number, y: number, zoom: number): { lng: number; lat: number };
+  lngLatToPixel(
+    lng: number,
+    lat: number,
+    zoom: number,
+  ): { x: number; y: number };
+  pixelToLngLat(
+    x: number,
+    y: number,
+    zoom: number,
+  ): { lng: number; lat: number };
   tilePixelSize(zoom: number, sourceTileSize: number): number;
-  normalizeTileCoord(x: number, y: number, zoom: number): { x: number; y: number } | null;
+  normalizeTileCoord(
+    x: number,
+    y: number,
+    zoom: number,
+  ): { x: number; y: number } | null;
 }
 
 const epsg3857Crs: Crs = {
   lngLatToPixel(lng, lat, zoom) {
     const tileSize = 256;
-    const clampedLat = Math.max(Math.min(lat, MERCATOR_MAX_LAT), -MERCATOR_MAX_LAT);
+    const clampedLat = Math.max(
+      Math.min(lat, MERCATOR_MAX_LAT),
+      -MERCATOR_MAX_LAT,
+    );
     const x = ((lng + 180) / 360) * tileSize * Math.pow(2, zoom);
     const sin = Math.sin((clampedLat * Math.PI) / 180);
     const y =
@@ -125,15 +139,19 @@ export function computeBbox(
   options: StaticMapOptions & { zoom: number },
 ): { minX: number; maxX: number; minY: number; maxY: number } | null {
   const crs = getCrs(options.source);
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    maxX = -Infinity;
+  let minY = Infinity,
+    maxY = -Infinity;
 
   for (const line of options.lines) {
     for (const [lng, lat] of line.path) {
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
       const { x, y } = crs.lngLatToPixel(lng, lat, options.zoom);
-      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
     }
   }
 
@@ -190,47 +208,30 @@ export async function renderStaticMap(
       const image = await loadImage(buffer);
 
       // Draw coordinates scaled to canvas (internalScale applied here)
-      const drawX = Math.round((tileX * tilePixelSize - topLeftX) * internalScale);
-      const drawY = Math.round((tileY * tilePixelSize - topLeftY) * internalScale);
-      const drawX2 = Math.round(((tileX + 1) * tilePixelSize - topLeftX) * internalScale);
-      const drawY2 = Math.round(((tileY + 1) * tilePixelSize - topLeftY) * internalScale);
+      const drawX = Math.round(
+        (tileX * tilePixelSize - topLeftX) * internalScale,
+      );
+      const drawY = Math.round(
+        (tileY * tilePixelSize - topLeftY) * internalScale,
+      );
+      const drawX2 = Math.round(
+        ((tileX + 1) * tilePixelSize - topLeftX) * internalScale,
+      );
+      const drawY2 = Math.round(
+        ((tileY + 1) * tilePixelSize - topLeftY) * internalScale,
+      );
 
       ctx.drawImage(image, drawX, drawY, drawX2 - drawX, drawY2 - drawY);
     }
   }
 
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  const nodes = buildScene(options, zoom, crs);
 
-  for (const line of options.lines) {
-    if (line.path.length < 2) continue;
-
-    if (line.borderStroke && line.borderWidth && line.borderWidth > 0) {
-      ctx.beginPath();
-      line.path.forEach(([lng, lat], index) => {
-        const p = crs.lngLatToPixel(lng, lat, zoom);
-        const x = (p.x - topLeftX) * internalScale;
-        const y = (p.y - topLeftY) * internalScale;
-        if (index === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.strokeStyle = line.borderStroke;
-      ctx.lineWidth = (line.width + line.borderWidth * 2) * internalScale;
-      ctx.stroke();
-    }
-
-    ctx.beginPath();
-    line.path.forEach(([lng, lat], index) => {
-      const p = crs.lngLatToPixel(lng, lat, zoom);
-      const x = (p.x - topLeftX) * internalScale;
-      const y = (p.y - topLeftY) * internalScale;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = line.stroke;
-    ctx.lineWidth = line.width * internalScale;
-    ctx.stroke();
-  }
+  ctx.save();
+  ctx.scale(internalScale, internalScale);
+  ctx.translate(-topLeftX, -topLeftY);
+  for (const node of nodes) node.draw(ctx);
+  ctx.restore();
 
   return canvas.toBuffer("image/png");
 }
@@ -328,8 +329,12 @@ function computeFitZoom(
   const lngFraction = (bounds.maxLng - bounds.minLng) / 360;
   const latFraction = (latRad(bounds.maxLat) - latRad(bounds.minLat)) / Math.PI;
 
-  const zoomX = Math.log2(usableWidth / (tileSize * Math.max(lngFraction, 1e-6)));
-  const zoomY = Math.log2(usableHeight / (tileSize * Math.max(latFraction, 1e-6)));
+  const zoomX = Math.log2(
+    usableWidth / (tileSize * Math.max(lngFraction, 1e-6)),
+  );
+  const zoomY = Math.log2(
+    usableHeight / (tileSize * Math.max(latFraction, 1e-6)),
+  );
   const zoom = Math.min(zoomX, zoomY);
 
   return Number.isFinite(zoom) ? zoom : 1;
@@ -344,8 +349,14 @@ function fitZoom27700(
   const usableWidth = Math.max(1, width - padding * 2);
   const usableHeight = Math.max(1, height - padding * 2);
 
-  const [minE, minN] = proj4("EPSG:4326", "EPSG:27700", [bounds.minLng, bounds.minLat]);
-  const [maxE, maxN] = proj4("EPSG:4326", "EPSG:27700", [bounds.maxLng, bounds.maxLat]);
+  const [minE, minN] = proj4("EPSG:4326", "EPSG:27700", [
+    bounds.minLng,
+    bounds.minLat,
+  ]);
+  const [maxE, maxN] = proj4("EPSG:4326", "EPSG:27700", [
+    bounds.maxLng,
+    bounds.maxLat,
+  ]);
 
   const projWidth = Math.abs(maxE - minE);
   const projHeight = Math.abs(maxN - minN);
@@ -364,8 +375,8 @@ function computeLinePadding(lines: LineLayer[]): number {
   let maxPadding = 0;
 
   for (const line of lines) {
-    const border = line.borderWidth ?? 0;
-    const padding = line.width / 2 + border;
+    const border = line.style.borderWidth ?? 0;
+    const padding = line.style.width / 2 + border;
 
     if (Number.isFinite(padding)) {
       maxPadding = Math.max(maxPadding, padding);

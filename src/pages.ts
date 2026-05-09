@@ -10,6 +10,7 @@ import {
   type StaticMapSource,
 } from "./staticmap.js";
 import { HttpError } from "./parser.js";
+import { buildScene, type PixelRect } from "./scene.js";
 
 export interface PageTile {
   url: string;
@@ -61,19 +62,8 @@ export function computePages(
   const firstCenterY = minY + size.height / 2;
 
   const crs = getCrs(source);
+  const nodes = buildScene(options, zoom, crs);
   const commandsWithoutCenter = commands.filter((c) => c.type !== "center");
-
-  // Pre-project all line segments to pixel space for intersection tests
-  const segments: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-  for (const line of options.lines) {
-    for (let i = 0; i + 1 < line.path.length; i++) {
-      const [lng1, lat1] = line.path[i]!;
-      const [lng2, lat2] = line.path[i + 1]!;
-      const p1 = crs.lngLatToPixel(lng1, lat1, zoom);
-      const p2 = crs.lngLatToPixel(lng2, lat2, zoom);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
-    }
-  }
 
   const pages: PageTile[] = [];
   for (let row = 0; row < numRows; row++) {
@@ -81,14 +71,14 @@ export function computePages(
       const cx = firstCenterX + col * strideX;
       const cy = firstCenterY + row * strideY;
 
-      const pageMinX = cx - size.width / 2;
-      const pageMaxX = cx + size.width / 2;
-      const pageMinY = cy - size.height / 2;
-      const pageMaxY = cy + size.height / 2;
+      const pageRect: PixelRect = {
+        minX: cx - size.width / 2,
+        maxX: cx + size.width / 2,
+        minY: cy - size.height / 2,
+        maxY: cy + size.height / 2,
+      };
 
-      if (!pageHasLines(segments, pageMinX, pageMaxX, pageMinY, pageMaxY)) {
-        continue;
-      }
+      if (!nodes.some((n) => n.intersectsRect(pageRect))) continue;
 
       const center = crs.pixelToLngLat(cx, cy, zoom);
       const pageCommands: Command[] = [
@@ -102,50 +92,4 @@ export function computePages(
   }
 
   return { pages };
-}
-
-// Liang-Barsky segment-rectangle intersection test
-function pageHasLines(
-  segments: Array<{ x1: number; y1: number; x2: number; y2: number }>,
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number,
-): boolean {
-  for (const { x1, y1, x2, y2 } of segments) {
-    if (segmentIntersectsRect(x1, y1, x2, y2, minX, maxX, minY, maxY)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function segmentIntersectsRect(
-  x1: number, y1: number,
-  x2: number, y2: number,
-  minX: number, maxX: number,
-  minY: number, maxY: number,
-): boolean {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  let tMin = 0;
-  let tMax = 1;
-
-  for (let i = 0; i < 4; i++) {
-    let p: number, q: number;
-    if (i === 0) { p = -dx; q = x1 - minX; }
-    else if (i === 1) { p = dx; q = maxX - x1; }
-    else if (i === 2) { p = -dy; q = y1 - minY; }
-    else { p = dy; q = maxY - y1; }
-
-    if (p === 0) {
-      if (q < 0) return false;
-    } else {
-      const t = q / p;
-      if (p < 0) tMin = Math.max(tMin, t);
-      else tMax = Math.min(tMax, t);
-      if (tMin > tMax) return false;
-    }
-  }
-  return true;
 }

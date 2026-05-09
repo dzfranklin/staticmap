@@ -38,14 +38,14 @@ describe("buildOptions", () => {
       tiles: ["https://example.com/{z}/{x}/{y}.png"],
     });
     expect(options.lines.length).toBe(2);
-    expect(options.lines[0]!.stroke).toBe("#ffffff");
-    expect(options.lines[0]!.width).toBe(10);
-    expect(options.lines[0]!.borderStroke).toBe("#000000");
-    expect(options.lines[0]!.borderWidth).toBe(12);
-    expect(options.lines[1]!.stroke).toBe("#ffffff");
-    expect(options.lines[1]!.width).toBe(4);
-    expect(options.lines[1]!.borderStroke).toBe("#000000");
-    expect(options.lines[1]!.borderWidth).toBe(12);
+    expect(options.lines[0]!.style.stroke).toBe("#ffffff");
+    expect(options.lines[0]!.style.width).toBe(10);
+    expect(options.lines[0]!.style.borderStroke).toBe("#000000");
+    expect(options.lines[0]!.style.borderWidth).toBe(12);
+    expect(options.lines[1]!.style.stroke).toBe("#ffffff");
+    expect(options.lines[1]!.style.width).toBe(4);
+    expect(options.lines[1]!.style.borderStroke).toBe("#000000");
+    expect(options.lines[1]!.style.borderWidth).toBe(12);
   });
 });
 
@@ -66,12 +66,12 @@ describe("parsePath", () => {
     expect(options.zoom).toBe(10.5);
     expect(options.center).toEqual({ lng: -122.4, lat: 37.77 });
     expect(options.lines.length).toBe(2);
-    expect(options.lines[0]!.stroke).toBe("#ffffff");
-    expect(options.lines[0]!.width).toBe(10);
-    expect(options.lines[1]!.stroke).toBe("#2563eb");
-    expect(options.lines[1]!.width).toBe(4);
-    expect(options.lines[1]!.borderStroke).toBe("#000000");
-    expect(options.lines[1]!.borderWidth).toBe(8);
+    expect(options.lines[0]!.style.stroke).toBe("#ffffff");
+    expect(options.lines[0]!.style.width).toBe(10);
+    expect(options.lines[1]!.style.stroke).toBe("#2563eb");
+    expect(options.lines[1]!.style.width).toBe(4);
+    expect(options.lines[1]!.style.borderStroke).toBe("#000000");
+    expect(options.lines[1]!.style.borderWidth).toBe(8);
   });
 
   it("rejects missing source key", () => {
