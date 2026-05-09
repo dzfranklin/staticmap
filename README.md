@@ -2,10 +2,44 @@
 
 Static map renderer based on [komoot/staticmap](https://github.com/komoot/staticmap). The interface is inspired by imgproxy.
 
-## Example
+## Examples
 
-`/map:osm/size:600x300/padding:16/stroke:%230000ff/width:10/border:%23ffffff/borderWidth:6/line:4:cgka%40pfwAA%7D%40CVC%3FGHI%40ABM%40GJG%40EAACGFMF%5DBCAKNCAI%40ABC%3FCVGHGM%40DCEE%3FCOMQKLQ%40ABUCSDGAYL%3FCG%3FMDOEM%3FKJSd%40MPe%40Z_%40%5CIRQRKAKJg%40VYD%5DAWJG%40%5D%60%40Qj%40ED%5BNI%3FC%40MCGNFOJBN%7C%40ABFHFB%3FPHd%40%3FHE%3FGN%3FHHNCTBH%3FL%40JGPIDCLEDFz%40AH%40NHX%3FRP%3FLFHCD%3FDJPDTMBKLC%40KBHBAD%40TI%40CHG%40KFAJ%40HFDAHIBGPIDGHOB%5DFG%40A%40%40JYDE%40HBOTWFCTUXo%40BAHFJQFCHINIP%3FFC~EkCJODAHQFCDYHSFCJFDQ%40k%40BMFGACMHA%3FCOIOIk%40Cc%40Di%40%3FcA%40D`
+`/map:osm/size:600x300/padding:16/stroke:%230000ff/width:8/border:%23ffffff/borderWidth:4/line:miv%7BIrbzUj%40%7DAjAyAfAg%40%5EGRUX%3FN%5BVIf%40y%40n%40WFWjAcAjC_EdE%7BIxC%7DFpAaEZ_CnAiCfBoD%60DyCjC%7BAv%40eBXElCqFzAcD~%40q%40Z%7DBjDsG`
 
-<img width="600" height="300" alt="example.png" src="https://github.com/user-attachments/assets/e3fe4ff5-810c-441a-8486-dcb2d5a13809" />
+<img width="600" height="300" alt="example-thunderforest" src="https://github.com/user-attachments/assets/23473afa-d423-44de-8299-6b97e465767f" />
 
-Map tiles [© OpenStreetMap](https://www.openstreetmap.org/copyright)
+Map tiles © Thunderforest © OpenStreetMap
+
+**Using British National Grid tiles**
+
+`/map:os/size:600x300/padding:16/stroke:%230000ff/width:8/border:%23ffffff/borderWidth:4/line:miv%7BIrbzUj%40%7DAjAyAfAg%40%5EGRUX%3FN%5BVIf%40y%40n%40WFWjAcAjC_EdE%7BIxC%7DFpAaEZ_CnAiCfBoD%60DyCjC%7BAv%40eBXElCqFzAcD~%40q%40Z%7DBjDsG`
+
+<img width="600" height="300" alt="example-os-leisure.png" src="https://github.com/user-attachments/assets/7b34476c-64fc-46b7-8ac9-420b5e684268" />
+
+Contains OS data © Crown copyright and database rights 2026
+
+sources.json:
+
+```json
+{
+  "osm": {
+    "attribution": "<a href=\"https://www.thunderforest.com/\">&copy; Thunderforest</a> <a href=\"https://www.openstreetmap.org/copyright\">&copy; OpenStreetMap</a>",
+    "maxzoom": 22,
+    "minzoom": 0,
+    "tileSize": 256,
+    "tiles": [
+      "https://api.thunderforest.com/outdoors/{z}/{x}/{y}@2x.png?apikey=<THUNDERFOREST_KEY>"
+    ]
+  },
+  "os": {
+    "attribution": "Contains OS data &copy; Crown copyright and database rights YYYY",
+    "crs": "EPSG:27700",
+    "maxzoom": 9,
+    "minzoom": 0,
+    "tileSize": 256,
+    "tiles": [
+      "https://api.os.uk/maps/raster/v1/zxy/Leisure_27700/{z}/{x}/{y}.png?key=<OS_KEY>"
+    ]
+  }
+}
+```
