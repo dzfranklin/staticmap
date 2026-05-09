@@ -59,7 +59,7 @@ app.get(/^\/map:/, async (req, res) => {
     const buffer = await renderStaticMap(options);
 
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24 * 365); // 1 year
     if (source.attribution) {
       res.setHeader("X-Map-Attribution", source.attribution);
     }
