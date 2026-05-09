@@ -22,6 +22,12 @@ const sourceSchema = z.object({
   minzoom: z.number().optional(),
   maxzoom: z.number().optional(),
   attribution: z.string().optional(),
+  crs: z
+    .preprocess(
+      (v) => (typeof v === "string" ? v.toUpperCase() : v),
+      z.enum(["EPSG:3857", "EPSG:27700"]),
+    )
+    .default("EPSG:3857"),
 });
 
 const sourcesSchema: z.ZodType<Record<string, StaticMapSource>> = z.record(

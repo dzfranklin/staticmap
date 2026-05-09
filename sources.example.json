@@ -1,0 +1,21 @@
+{
+  "osm": {
+    "attribution": "<a href=\"https://www.openstreetmap.org/copyright\">&copy; OpenStreetMap</a>",
+    "maxzoom": 19,
+    "minzoom": 0,
+    "tileSize": 256,
+    "tiles": [
+      "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    ]
+  },
+  "os": {
+    "attribution": "Contains OS data &copy; Crown copyright and database rights YYYY",
+    "crs": "EPSG:27700",
+    "maxzoom": 9,
+    "minzoom": 0,
+    "tileSize": 256,
+    "tiles": [
+      "https://api.os.uk/maps/raster/v1/zxy/Leisure_27700/{z}/{x}/{y}.png?key=YOUR_KEY"
+    ]
+  }
+}

@@ -97,6 +97,28 @@ describe("renderStaticMap", () => {
         ],
       },
     },
+    {
+      name: "epsg27700-basic",
+      options: {
+        source: {
+          tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
+          tileSize: 256,
+          crs: "EPSG:27700",
+        },
+        size: { width: 320, height: 200 },
+        padding: 10,
+        lines: [
+          {
+            path: [
+              [-0.1278, 51.5074],
+              [-1.8904, 52.4862],
+            ],
+            stroke: "#ff0000",
+            width: 4,
+          },
+        ],
+      },
+    },
   ] satisfies { name: string; options: StaticMapOptions }[];
 
   for (const testCase of cases) {
