@@ -190,7 +190,7 @@ export function buildOptions(
         style = { ...style, width: command.value };
         break;
       case "border":
-        style = { ...style, borderStroke: command.value };
+        style = { ...style, borderColor: command.value };
         break;
       case "borderWidth":
         style = { ...style, borderWidth: command.value };

@@ -9,6 +9,7 @@ import {
   StaticMapOptions,
   StaticMapSource,
 } from "../src/staticmap.js";
+import { defaultStyle, Style } from "../src/style.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -63,9 +64,10 @@ describe("renderStaticMap", () => {
               [-122.3, 37.75],
             ],
             style: {
+              ...defaultStyle(),
               color: "#00ff00",
               width: 8,
-              borderStroke: "#ffffff",
+              borderColor: "#ffffff",
               borderWidth: 4,
               lineCap: "round",
               lineJoin: "round",
@@ -89,6 +91,7 @@ describe("renderStaticMap", () => {
               [-122.4, 37.74],
             ],
             style: {
+              ...defaultStyle(),
               color: "#ffffff",
               width: 10,
               lineCap: "round",
@@ -103,6 +106,7 @@ describe("renderStaticMap", () => {
               [-122.4, 37.74],
             ],
             style: {
+              ...defaultStyle(),
               color: "#2563eb",
               width: 4,
               lineCap: "round",
@@ -130,6 +134,7 @@ describe("renderStaticMap", () => {
               [-1.8904, 52.4862],
             ],
             style: {
+              ...defaultStyle(),
               color: "#ff0000",
               width: 4,
               lineCap: "round",
@@ -154,6 +159,7 @@ describe("renderStaticMap", () => {
               [-122.3, 37.75],
             ],
             style: {
+              ...defaultStyle(),
               color: "#e11d48",
               width: 6,
               dasharray: [2, 1],
@@ -176,9 +182,10 @@ describe("renderStaticMap", () => {
             lng: -122.4,
             lat: 37.77,
             style: {
+              ...defaultStyle(),
               color: "#ff0000",
               width: 20,
-              borderStroke: "#ffffff",
+              borderColor: "#ffffff",
               borderWidth: 4,
               lineCap: "round",
               lineJoin: "round",
@@ -199,9 +206,10 @@ describe("renderStaticMap", () => {
             lng: -122.4,
             lat: 37.77,
             style: {
+              ...defaultStyle(),
               color: "#ff0000",
               width: 20,
-              borderStroke: "#ffffff",
+              borderColor: "#ffffff",
               borderWidth: 4,
               lineCap: "round",
               lineJoin: "round",
@@ -214,7 +222,10 @@ describe("renderStaticMap", () => {
         ],
       },
     },
-  ] satisfies { name: string; options: StaticMapOptions }[];
+  ] satisfies {
+    name: string;
+    options: StaticMapOptions;
+  }[];
 
   for (const testCase of cases) {
     it(`renders ${testCase.name}`, async () => {

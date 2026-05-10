@@ -46,11 +46,11 @@ describe("buildOptions", () => {
     expect(lines.length).toBe(2);
     expect(lines[0]!.style.color).toBe("#ffffff");
     expect(lines[0]!.style.width).toBe(10);
-    expect(lines[0]!.style.borderStroke).toBe("#000000");
+    expect(lines[0]!.style.borderColor).toBe("#000000");
     expect(lines[0]!.style.borderWidth).toBe(12);
     expect(lines[1]!.style.color).toBe("#ffffff");
     expect(lines[1]!.style.width).toBe(4);
-    expect(lines[1]!.style.borderStroke).toBe("#000000");
+    expect(lines[1]!.style.borderColor).toBe("#000000");
     expect(lines[1]!.style.borderWidth).toBe(12);
   });
 });
@@ -77,7 +77,7 @@ describe("parsePath", () => {
     expect(lines[0]!.style.width).toBe(10);
     expect(lines[1]!.style.color).toBe("#2563eb");
     expect(lines[1]!.style.width).toBe(4);
-    expect(lines[1]!.style.borderStroke).toBe("#000000");
+    expect(lines[1]!.style.borderColor).toBe("#000000");
     expect(lines[1]!.style.borderWidth).toBe(8);
   });
 

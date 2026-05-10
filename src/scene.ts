@@ -55,13 +55,13 @@ export class LineNode extends SceneNode {
 
     const dash = this.style.dasharray;
 
-    if (this.style.borderStroke && (this.style.borderWidth ?? 0) > 0) {
-      const borderWidth = this.style.width + (this.style.borderWidth ?? 0) * 2;
-      ctx.setLineDash(dash ? dash.map((v) => v * borderWidth) : []);
+    if ((this.style.borderWidth ?? 0) > 0) {
+      const w = this.style.width + this.style.borderWidth! * 2;
+      ctx.setLineDash(dash ? dash.map((v) => v * w) : []);
       ctx.beginPath();
       this.tracePath(ctx);
-      ctx.strokeStyle = this.style.borderStroke;
-      ctx.lineWidth = borderWidth;
+      ctx.strokeStyle = this.style.borderColor;
+      ctx.lineWidth = w;
       ctx.stroke();
     }
 
@@ -106,7 +106,7 @@ export class PointNode extends SceneNode {
 
   draw(ctx: CanvasRenderingContext2D): void {
     const r = this.style.width / 2;
-    if (this.style.borderStroke && (this.style.borderWidth ?? 0) > 0) {
+    if (this.style.borderColor && (this.style.borderWidth ?? 0) > 0) {
       ctx.beginPath();
       ctx.arc(
         this.x,
@@ -115,7 +115,7 @@ export class PointNode extends SceneNode {
         0,
         Math.PI * 2,
       );
-      ctx.fillStyle = this.style.borderStroke;
+      ctx.fillStyle = this.style.borderColor;
       ctx.fill();
     }
     ctx.beginPath();

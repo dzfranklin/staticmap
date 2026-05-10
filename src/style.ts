@@ -17,7 +17,7 @@ export type LabelAnchor = z.infer<typeof LabelAnchorSchema>;
 export interface Style {
   color: string;
   width: number;
-  borderStroke?: string;
+  borderColor: string;
   borderWidth?: number;
   lineCap: CanvasLineCap;
   lineJoin: CanvasLineJoin;
@@ -36,6 +36,7 @@ export function defaultStyle(): Style {
     width: 4,
     lineCap: "round",
     lineJoin: "round",
+    borderColor: "#000000",
     labelSize: 16,
     labelAnchor: "bottom",
     labelOffset: 2,
