@@ -1,5 +1,5 @@
 import { type CanvasRenderingContext2D } from "canvas";
-import { type Style } from "./style.js";
+import { type LabelAnchor, type Style } from "./style.js";
 import { type Crs, type StaticMapOptions } from "./staticmap.js";
 
 export interface PixelRect {
@@ -122,6 +122,19 @@ export class PointNode extends SceneNode {
     ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
     ctx.fillStyle = this.style.color;
     ctx.fill();
+
+    if (this.style.label) {
+      const outerR = r + (this.style.borderWidth ?? 0);
+      const [dx, dy, textAlign, textBaseline] = labelLayout(
+        this.style.labelAnchor,
+        outerR + this.style.labelOffset,
+      );
+      ctx.font = `${this.style.labelSize}px "Source Sans 3"`;
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = textBaseline;
+      ctx.fillStyle = this.style.labelColor;
+      ctx.fillText(this.style.label, this.x + dx, this.y + dy);
+    }
   }
 }
 
@@ -150,6 +163,32 @@ export function buildScene(
   }
 
   return nodes;
+}
+
+function labelLayout(
+  anchor: LabelAnchor,
+  dist: number,
+): [number, number, CanvasTextAlign, CanvasTextBaseline] {
+  switch (anchor) {
+    case "center":
+      return [0, 0, "center", "middle"];
+    case "left":
+      return [-dist, 0, "right", "middle"];
+    case "right":
+      return [dist, 0, "left", "middle"];
+    case "top":
+      return [0, -dist, "center", "bottom"];
+    case "bottom":
+      return [0, dist, "center", "top"];
+    case "top-left":
+      return [-dist, -dist, "right", "bottom"];
+    case "top-right":
+      return [dist, -dist, "left", "bottom"];
+    case "bottom-left":
+      return [-dist, dist, "right", "top"];
+    case "bottom-right":
+      return [dist, dist, "left", "top"];
+  }
 }
 
 function segmentIntersectsRect(

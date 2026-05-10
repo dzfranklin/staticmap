@@ -4,7 +4,8 @@ import {
   type StaticMapSource,
   type Feature,
 } from "./staticmap.js";
-import { defaultStyle, type Style } from "./style.js";
+import { z } from "zod";
+import { defaultStyle, LabelAnchorSchema, type Style } from "./style.js";
 
 export interface CommandColor {
   type: "color";
@@ -80,6 +81,31 @@ export interface CommandPoint {
   lat: number;
 }
 
+export interface CommandLabel {
+  type: "label";
+  value: string;
+}
+
+export interface CommandLabelColor {
+  type: "labelColor";
+  value: string;
+}
+
+export interface CommandLabelAnchor {
+  type: "labelAnchor";
+  value: z.infer<typeof LabelAnchorSchema>;
+}
+
+export interface CommandLabelOffset {
+  type: "labelOffset";
+  value: number;
+}
+
+export interface CommandLabelSize {
+  type: "labelSize";
+  value: number;
+}
+
 export type Command =
   | CommandColor
   | CommandWidth
@@ -88,6 +114,11 @@ export type Command =
   | CommandDash
   | CommandCap
   | CommandJoin
+  | CommandLabel
+  | CommandLabelColor
+  | CommandLabelAnchor
+  | CommandLabelOffset
+  | CommandLabelSize
   | CommandLine
   | CommandPoint
   | CommandSize
@@ -173,10 +204,28 @@ export function buildOptions(
       case "join":
         style = { ...style, lineJoin: command.value };
         break;
+      case "label":
+        style = { ...style, label: command.value };
+        break;
+      case "labelColor":
+        style = { ...style, labelColor: command.value };
+        break;
+      case "labelAnchor":
+        style = { ...style, labelAnchor: command.value };
+        break;
+      case "labelOffset":
+        style = { ...style, labelOffset: command.value };
+        break;
+      case "labelSize":
+        style = { ...style, labelSize: command.value };
+        break;
       case "line": {
         const path = decodeLine(command.value, command.precision);
         if (path.length < 2) {
           throw new HttpError(400, "Polyline must contain at least two points");
+        }
+        if (style.label !== undefined) {
+          throw new HttpError(400, "Labels on lines are not supported");
         }
         features.push({ kind: "line", path, style: { ...style } });
         break;
@@ -188,6 +237,7 @@ export function buildOptions(
           lat: command.lat,
           style: { ...style },
         });
+        style = { ...style, label: undefined };
         break;
       case "size":
         size = { width: command.width, height: command.height };
@@ -332,6 +382,42 @@ function parseCommandSegment(segment: string): Command {
         value: parseNumber(parts[0], "pageOverlap"),
       };
     }
+    case "label":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected label value");
+      }
+      return { type: "label", value: parts[0] };
+    case "labelColor":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected labelColor value");
+      }
+      return { type: "labelColor", value: parts[0] };
+    case "labelAnchor": {
+      const result = LabelAnchorSchema.safeParse(parts[0]);
+      if (!result.success) {
+        throw new HttpError(
+          400,
+          `labelAnchor must be one of: ${LabelAnchorSchema.options.join(", ")}`,
+        );
+      }
+      return { type: "labelAnchor", value: result.data };
+    }
+    case "labelOffset":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected labelOffset value");
+      }
+      return {
+        type: "labelOffset",
+        value: parseNumber(parts[0], "labelOffset"),
+      };
+    case "labelSize":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected labelSize value");
+      }
+      return {
+        type: "labelSize",
+        value: parseNumber(parts[0], "labelSize"),
+      };
     case "point": {
       if (!parts[0]) {
         throw new HttpError(400, "Expected point value");
@@ -394,6 +480,16 @@ function serializeCommand(command: Command): string {
       return `cap:${command.value}`;
     case "join":
       return `join:${command.value}`;
+    case "label":
+      return `label:${encodeURIComponent(command.value)}`;
+    case "labelColor":
+      return `labelColor:${encodeURIComponent(command.value)}`;
+    case "labelAnchor":
+      return `labelAnchor:${command.value}`;
+    case "labelOffset":
+      return `labelOffset:${command.value}`;
+    case "labelSize":
+      return `labelSize:${command.value}`;
     case "line":
       return command.precision !== undefined
         ? `line:${command.precision}:${encodeURIComponent(command.value)}`

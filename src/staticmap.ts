@@ -1,3 +1,4 @@
+import "./fonts.js";
 import { createCanvas, loadImage } from "canvas";
 import { decodePolyline, type LngLat } from "./polyline.js";
 import proj4 from "proj4";

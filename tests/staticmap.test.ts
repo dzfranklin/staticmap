@@ -187,6 +187,33 @@ describe("renderStaticMap", () => {
         ],
       },
     },
+    {
+      name: "point-label",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            style: {
+              color: "#ff0000",
+              width: 20,
+              borderStroke: "#ffffff",
+              borderWidth: 4,
+              lineCap: "round",
+              lineJoin: "round",
+              label: "Hello",
+              labelColor: "#1e3a5f",
+              labelAnchor: "top",
+              labelOffset: 4,
+            },
+          },
+        ],
+      },
+    },
   ] satisfies { name: string; options: StaticMapOptions }[];
 
   for (const testCase of cases) {

@@ -100,6 +100,49 @@ describe("parsePath", () => {
   });
 });
 
+describe("label command", () => {
+  it("applies label and labelColor to the next point only", () => {
+    const { commands } = parsePath(
+      `/map:osm/label:A/labelColor:%23ff0000/point:-1,51/point:-2,52`,
+    );
+    const options = buildOptions(commands, source);
+    const points = options.features.filter((f) => f.kind === "point");
+    expect(points.length).toBe(2);
+    expect(points[0]!.style.label).toBe("A");
+    expect(points[0]!.style.labelColor).toBe("#ff0000");
+    expect(points[1]!.style.label).toBeUndefined();
+  });
+
+  it("rejects label on a line", () => {
+    const { commands } = parsePath(`/map:osm/label:A/line:${samplePolyline}`);
+    expect(() => buildOptions(commands, source)).toThrow(HttpError);
+  });
+
+  it("round-trips label, labelColor, labelAnchor, and labelOffset", () => {
+    const original = `/map:osm/label:Hello/labelColor:%23ff0000/labelAnchor:top-right/labelOffset:8/point:-1.000000,51.000000`;
+    const { sourceKey, commands } = parsePath(original);
+    const serialized = serializePath(sourceKey, commands);
+    const { commands: commands2 } = parsePath(serialized);
+    expect(buildOptions(commands, source)).toEqual(
+      buildOptions(commands2, source),
+    );
+  });
+
+  it("rejects invalid labelAnchor", () => {
+    expect(() => parsePath(`/map:osm/labelAnchor:diagonal`)).toThrow(HttpError);
+  });
+
+  it("applies labelAnchor and labelOffset to point style", () => {
+    const { commands } = parsePath(
+      `/map:osm/labelAnchor:right/labelOffset:10/label:X/point:-1,51`,
+    );
+    const options = buildOptions(commands, source);
+    const point = options.features[0]!;
+    expect(point.style.labelAnchor).toBe("right");
+    expect(point.style.labelOffset).toBe(10);
+  });
+});
+
 describe("serializePath", () => {
   it("round-trips a path with every command", () => {
     const original =
