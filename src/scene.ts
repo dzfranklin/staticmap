@@ -2,7 +2,6 @@ import { type CanvasRenderingContext2D } from "canvas";
 import { type Style } from "./style.js";
 import { type Crs, type StaticMapOptions } from "./staticmap.js";
 
-
 export interface PixelRect {
   minX: number;
   maxX: number;
@@ -54,14 +53,19 @@ export class LineNode extends SceneNode {
     ctx.lineCap = this.style.lineCap;
     ctx.lineJoin = this.style.lineJoin;
 
+    const dash = this.style.dasharray;
+
     if (this.style.borderStroke && (this.style.borderWidth ?? 0) > 0) {
+      const borderWidth = this.style.width + (this.style.borderWidth ?? 0) * 2;
+      ctx.setLineDash(dash ? dash.map((v) => v * borderWidth) : []);
       ctx.beginPath();
       this.tracePath(ctx);
       ctx.strokeStyle = this.style.borderStroke;
-      ctx.lineWidth = this.style.width + (this.style.borderWidth ?? 0) * 2;
+      ctx.lineWidth = borderWidth;
       ctx.stroke();
     }
 
+    ctx.setLineDash(dash ? dash.map((v) => v * this.style.width) : []);
     ctx.beginPath();
     this.tracePath(ctx);
     ctx.strokeStyle = this.style.color;
@@ -104,7 +108,13 @@ export class PointNode extends SceneNode {
     const r = this.style.width / 2;
     if (this.style.borderStroke && (this.style.borderWidth ?? 0) > 0) {
       ctx.beginPath();
-      ctx.arc(this.x, this.y, r + (this.style.borderWidth ?? 0), 0, Math.PI * 2);
+      ctx.arc(
+        this.x,
+        this.y,
+        r + (this.style.borderWidth ?? 0),
+        0,
+        Math.PI * 2,
+      );
       ctx.fillStyle = this.style.borderStroke;
       ctx.fill();
     }

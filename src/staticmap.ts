@@ -248,7 +248,11 @@ export async function renderStaticMap(
   ctx.save();
   ctx.scale(internalScale, internalScale);
   ctx.translate(-topLeftX, -topLeftY);
-  for (const node of nodes) node.draw(ctx);
+  for (const node of nodes) {
+    ctx.save();
+    node.draw(ctx);
+    ctx.restore();
+  }
   ctx.restore();
 
   return canvas.toBuffer("image/png");
@@ -389,7 +393,6 @@ function fitZoom27700(
 
   return 0;
 }
-
 
 function latRad(lat: number): number {
   const clamped = Math.max(Math.min(lat, MERCATOR_MAX_LAT), -MERCATOR_MAX_LAT);

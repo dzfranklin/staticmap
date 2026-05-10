@@ -5,6 +5,8 @@ export interface Style {
   borderWidth?: number;
   lineCap: CanvasLineCap;
   lineJoin: CanvasLineJoin;
+  /** Dash pattern as alternating dash/gap lengths scaled by line width, like maplibre's line-dasharray. */
+  dasharray?: number[];
 }
 
 export function defaultStyle(): Style {

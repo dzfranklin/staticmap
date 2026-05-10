@@ -140,6 +140,31 @@ describe("renderStaticMap", () => {
       },
     },
     {
+      name: "dashed-line",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 18,
+        features: [
+          {
+            kind: "line",
+            path: [
+              [-122.5, 37.7],
+              [-122.4, 37.8],
+              [-122.3, 37.75],
+            ],
+            style: {
+              color: "#e11d48",
+              width: 6,
+              dasharray: [2, 1],
+              lineCap: "butt",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
       name: "point",
       options: {
         source,
@@ -206,7 +231,15 @@ function assertVisualSnapshot(name: string, buffer: Buffer): void {
 
     writeSnapshotFailureArtifacts(result);
   }
+
   expect(result.success, result.message).toBe(true);
+
+  if (result.success && result.diffPixels) {
+    console.warn(
+      `Snapshot for ${name} has ${result.diffPixels} differing pixels. ` +
+        `Consider updating the snapshot if this change is expected.`,
+    );
+  }
 }
 
 interface SnapshotResult {
@@ -224,7 +257,7 @@ function snapshotTest(
   buffer: Buffer,
   {
     threshold = 0.1,
-    maxDiffRatio = 0.01,
+    maxDiffRatio = 0.0005,
   }: { threshold?: number; maxDiffRatio?: number } = {},
 ): SnapshotResult {
   const r: SnapshotResult = { name, success: false };

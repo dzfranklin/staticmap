@@ -59,6 +59,21 @@ export interface CommandPageOverlap {
   value: number;
 }
 
+export interface CommandDash {
+  type: "dash";
+  value: number[];
+}
+
+export interface CommandCap {
+  type: "cap";
+  value: CanvasLineCap;
+}
+
+export interface CommandJoin {
+  type: "join";
+  value: CanvasLineJoin;
+}
+
 export interface CommandPoint {
   type: "point";
   lng: number;
@@ -70,6 +85,9 @@ export type Command =
   | CommandWidth
   | CommandBorder
   | CommandBorderWidth
+  | CommandDash
+  | CommandCap
+  | CommandJoin
   | CommandLine
   | CommandPoint
   | CommandSize
@@ -123,6 +141,13 @@ export function buildOptions(
 
   let style: Style = defaultStyle();
 
+  const hasCommand = (type: Command["type"]) =>
+    commands.some((c) => c.type === type);
+
+  if (hasCommand("dash") && !hasCommand("cap")) {
+    style = { ...style, lineCap: "butt" };
+  }
+
   const features: Feature[] = [];
 
   for (const command of commands) {
@@ -139,6 +164,15 @@ export function buildOptions(
       case "borderWidth":
         style = { ...style, borderWidth: command.value };
         break;
+      case "dash":
+        style = { ...style, dasharray: command.value };
+        break;
+      case "cap":
+        style = { ...style, lineCap: command.value };
+        break;
+      case "join":
+        style = { ...style, lineJoin: command.value };
+        break;
       case "line": {
         const path = decodeLine(command.value, command.precision);
         if (path.length < 2) {
@@ -148,7 +182,12 @@ export function buildOptions(
         break;
       }
       case "point":
-        features.push({ kind: "point", lng: command.lng, lat: command.lat, style: { ...style } });
+        features.push({
+          kind: "point",
+          lng: command.lng,
+          lat: command.lat,
+          style: { ...style },
+        });
         break;
       case "size":
         size = { width: command.width, height: command.height };
@@ -214,6 +253,30 @@ function parseCommandSegment(segment: string): Command {
         type: "borderWidth",
         value: parseNumber(parts[0], "borderWidth"),
       };
+    case "cap": {
+      const v = parts[0];
+      if (v !== "butt" && v !== "round" && v !== "square") {
+        throw new HttpError(400, "cap must be butt, round, or square");
+      }
+      return { type: "cap", value: v };
+    }
+    case "join": {
+      const v = parts[0];
+      if (v !== "round" && v !== "bevel" && v !== "miter") {
+        throw new HttpError(400, "join must be round, bevel, or miter");
+      }
+      return { type: "join", value: v };
+    }
+    case "dash": {
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected dash value");
+      }
+      const values = parts[0].split(",").map((v) => parseNumber(v, "dash"));
+      if (values.length === 0) {
+        throw new HttpError(400, "dash must have at least one value");
+      }
+      return { type: "dash", value: values };
+    }
     case "line": {
       if (parts.length === 2) {
         const precision = parseNumber(parts[0]!, "line precision");
@@ -264,7 +327,10 @@ function parseCommandSegment(segment: string): Command {
       if (!parts[0]) {
         throw new HttpError(400, "Expected pageOverlap value");
       }
-      return { type: "pageOverlap", value: parseNumber(parts[0], "pageOverlap") };
+      return {
+        type: "pageOverlap",
+        value: parseNumber(parts[0], "pageOverlap"),
+      };
     }
     case "point": {
       if (!parts[0]) {
@@ -322,6 +388,12 @@ function serializeCommand(command: Command): string {
       return `border:${encodeURIComponent(command.value)}`;
     case "borderWidth":
       return `borderWidth:${command.value}`;
+    case "dash":
+      return `dash:${command.value.join(",")}`;
+    case "cap":
+      return `cap:${command.value}`;
+    case "join":
+      return `join:${command.value}`;
     case "line":
       return command.precision !== undefined
         ? `line:${command.precision}:${encodeURIComponent(command.value)}`
