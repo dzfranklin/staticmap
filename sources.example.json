@@ -4,9 +4,7 @@
     "maxzoom": 19,
     "minzoom": 0,
     "tileSize": 256,
-    "tiles": [
-      "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    ]
+    "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]
   },
   "os": {
     "attribution": "Contains OS data &copy; Crown copyright and database rights YYYY",

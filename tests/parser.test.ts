@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildOptions, HttpError, parsePath, serializePath } from "../src/parser.js";
+import {
+  buildOptions,
+  HttpError,
+  parsePath,
+  serializePath,
+} from "../src/parser.js";
 
 const samplePolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 // Contains '?' which is a valid polyline character but a URL query delimiter
@@ -87,7 +92,9 @@ describe("parsePath", () => {
   });
 
   it("parses pageOverlap command", () => {
-    const { commands } = parsePath(`/map:osm/pageOverlap:100/line:${samplePolyline}`);
+    const { commands } = parsePath(
+      `/map:osm/pageOverlap:100/line:${samplePolyline}`,
+    );
     const options = buildOptions(commands, source);
     expect(options.pageOverlap).toBe(100);
   });
@@ -120,7 +127,9 @@ describe("serializePath", () => {
   });
 
   it("encodes color values", () => {
-    const { sourceKey, commands } = parsePath(`/map:osm/color:%23aabbcc/line:${samplePolyline}`);
+    const { sourceKey, commands } = parsePath(
+      `/map:osm/color:%23aabbcc/line:${samplePolyline}`,
+    );
     const url = serializePath(sourceKey, commands);
     expect(url).toContain("color:%23aabbcc");
   });
@@ -139,7 +148,9 @@ describe("serializePath", () => {
   });
 
   it("includes center with 6 decimal places", () => {
-    const { sourceKey, commands } = parsePath("/map:osm/center:-1.23456789,51.98765432");
+    const { sourceKey, commands } = parsePath(
+      "/map:osm/center:-1.23456789,51.98765432",
+    );
     const url = serializePath(sourceKey, commands);
     expect(url).toContain("center:-1.234568,51.987654");
   });

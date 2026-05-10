@@ -10,7 +10,10 @@ export function handleJsonError(error: unknown, res: express.Response): void {
   if (!(error instanceof HttpError)) {
     logger.error({ error }, "Unhandled error");
   }
-  res.status(status).setHeader("Content-Type", "application/json").json({ error: message });
+  res
+    .status(status)
+    .setHeader("Content-Type", "application/json")
+    .json({ error: message });
 }
 
 export function handleError(error: unknown, res: express.Response): void {

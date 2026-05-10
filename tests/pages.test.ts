@@ -54,7 +54,9 @@ describe("computePages", () => {
     const withOverlap = pages(
       `/map:osm/size:400x400/zoom:8/pageOverlap:200/line:${sfToLa}`,
     );
-    expect(withOverlap.pages.length).toBeGreaterThanOrEqual(noOverlap.pages.length);
+    expect(withOverlap.pages.length).toBeGreaterThanOrEqual(
+      noOverlap.pages.length,
+    );
   });
 
   it("row/col indices are correct", () => {
@@ -123,7 +125,9 @@ describe("computePages", () => {
   });
 
   it("per-page url resolves to the computed center, not the line centroid", () => {
-    const result = pages(`/map:osm/size:400x400/zoom:8/pageOverlap:0/line:${sfToLa}`);
+    const result = pages(
+      `/map:osm/size:400x400/zoom:8/pageOverlap:0/line:${sfToLa}`,
+    );
     for (const tile of result.pages) {
       const { commands } = parsePath(tile.url);
       const opts = buildOptions(commands, source);

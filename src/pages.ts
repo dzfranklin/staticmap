@@ -4,11 +4,7 @@ import {
   serializePath,
   type Command,
 } from "./parser.js";
-import {
-  computeBbox,
-  getCrs,
-  type StaticMapSource,
-} from "./staticmap.js";
+import { computeBbox, getCrs, type StaticMapSource } from "./staticmap.js";
 import { HttpError } from "./parser.js";
 import { buildScene, type PixelRect } from "./scene.js";
 
@@ -43,12 +39,18 @@ export function computePages(
   }
 
   if (options.features.length === 0) {
-    throw new HttpError(400, "pages endpoint requires at least one line command");
+    throw new HttpError(
+      400,
+      "pages endpoint requires at least one line command",
+    );
   }
 
   const bbox = computeBbox({ ...options, zoom });
   if (!bbox) {
-    throw new HttpError(400, "pages endpoint requires at least one line command");
+    throw new HttpError(
+      400,
+      "pages endpoint requires at least one line command",
+    );
   }
 
   const { minX, maxX, minY, maxY } = bbox;
