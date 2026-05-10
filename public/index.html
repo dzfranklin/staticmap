@@ -318,7 +318,7 @@
 
       const items = [];
       const defaultTextCommand =
-        "size:600x300/padding:16/stroke:#0000ff/width:10/border:#ffffff/borderWidth:6";
+        "size:600x300/padding:16/color:#0000ff/width:10/border:#ffffff/borderWidth:6";
       const defaultGeoJson = `{
       "type": "Feature",
       "properties": {},
@@ -425,7 +425,7 @@
           if (item.type === "text") {
             const input = document.createElement("input");
             input.value = item.value;
-            input.placeholder = "stroke:#ffffff/width:6";
+            input.placeholder = "color:#ffffff/width:6";
             input.addEventListener("input", (event) => {
               item.value = event.target.value;
             });

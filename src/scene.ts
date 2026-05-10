@@ -2,6 +2,7 @@ import { type CanvasRenderingContext2D } from "canvas";
 import { type Style } from "./style.js";
 import { type Crs, type StaticMapOptions } from "./staticmap.js";
 
+
 export interface PixelRect {
   minX: number;
   maxX: number;
@@ -63,7 +64,7 @@ export class LineNode extends SceneNode {
 
     ctx.beginPath();
     this.tracePath(ctx);
-    ctx.strokeStyle = this.style.stroke;
+    ctx.strokeStyle = this.style.color;
     ctx.lineWidth = this.style.width;
     ctx.stroke();
   }
@@ -77,6 +78,43 @@ export class LineNode extends SceneNode {
   }
 }
 
+export class PointNode extends SceneNode {
+  private readonly x: number;
+  private readonly y: number;
+  private readonly style: Style;
+
+  constructor(x: number, y: number, style: Style) {
+    super();
+    this.x = x;
+    this.y = y;
+    this.style = style;
+  }
+
+  intersectsRect(rect: PixelRect): boolean {
+    const r = this.style.width / 2 + (this.style.borderWidth ?? 0);
+    return (
+      this.x + r >= rect.minX &&
+      this.x - r <= rect.maxX &&
+      this.y + r >= rect.minY &&
+      this.y - r <= rect.maxY
+    );
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    const r = this.style.width / 2;
+    if (this.style.borderStroke && (this.style.borderWidth ?? 0) > 0) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r + (this.style.borderWidth ?? 0), 0, Math.PI * 2);
+      ctx.fillStyle = this.style.borderStroke;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = this.style.color;
+    ctx.fill();
+  }
+}
+
 export function buildScene(
   options: StaticMapOptions,
   zoom: number,
@@ -84,16 +122,21 @@ export function buildScene(
 ): SceneNode[] {
   const nodes: SceneNode[] = [];
 
-  for (const line of options.lines) {
-    const segments: ProjectedSegment[] = [];
-    for (let i = 0; i + 1 < line.path.length; i++) {
-      const [lng1, lat1] = line.path[i]!;
-      const [lng2, lat2] = line.path[i + 1]!;
-      const p1 = crs.lngLatToPixel(lng1, lat1, zoom);
-      const p2 = crs.lngLatToPixel(lng2, lat2, zoom);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+  for (const feature of options.features) {
+    if (feature.kind === "line") {
+      const segments: ProjectedSegment[] = [];
+      for (let i = 0; i + 1 < feature.path.length; i++) {
+        const [lng1, lat1] = feature.path[i]!;
+        const [lng2, lat2] = feature.path[i + 1]!;
+        const p1 = crs.lngLatToPixel(lng1, lat1, zoom);
+        const p2 = crs.lngLatToPixel(lng2, lat2, zoom);
+        segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+      }
+      nodes.push(new LineNode(segments, feature.style));
+    } else {
+      const { x, y } = crs.lngLatToPixel(feature.lng, feature.lat, zoom);
+      nodes.push(new PointNode(x, y, feature.style));
     }
-    nodes.push(new LineNode(segments, line.style));
   }
 
   return nodes;

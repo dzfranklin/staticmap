@@ -24,10 +24,20 @@ export interface StaticMapSource {
   crs?: "EPSG:3857" | "EPSG:27700";
 }
 
-export interface LineLayer {
+export interface LineFeature {
+  kind: "line";
   path: LngLat[];
   style: Style;
 }
+
+export interface PointFeature {
+  kind: "point";
+  lng: number;
+  lat: number;
+  style: Style;
+}
+
+export type Feature = LineFeature | PointFeature;
 
 export interface StaticMapOptions {
   source: StaticMapSource;
@@ -41,7 +51,7 @@ export interface StaticMapOptions {
     lng: number;
     lat: number;
   };
-  lines: LineLayer[];
+  features: Feature[];
   pageOverlap?: number;
 }
 
@@ -144,8 +154,10 @@ export function computeBbox(
   let minY = Infinity,
     maxY = -Infinity;
 
-  for (const line of options.lines) {
-    for (const [lng, lat] of line.path) {
+  for (const feature of options.features) {
+    const coords: LngLat[] =
+      feature.kind === "line" ? feature.path : [[feature.lng, feature.lat]];
+    for (const [lng, lat] of coords) {
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
       const { x, y } = crs.lngLatToPixel(lng, lat, options.zoom);
       minX = Math.min(minX, x);
@@ -250,9 +262,8 @@ export function resolveView(
   options: StaticMapOptions,
   sourceTileSize: number,
 ): { zoom: number; center: { lng: number; lat: number } } {
-  const bounds = computeBounds(options.lines);
-  const linePadding = computeLinePadding(options.lines);
-  const padding = (options.padding ?? 0) + linePadding;
+  const bounds = computeBounds(options.features);
+  const padding = options.padding ?? 0;
   let zoom = options.zoom;
   let center = options.center;
 
@@ -301,15 +312,17 @@ export function resolveView(
 }
 
 function computeBounds(
-  lines: LineLayer[],
+  features: Feature[],
 ): { minLng: number; maxLng: number; minLat: number; maxLat: number } | null {
   let minLng = Infinity;
   let maxLng = -Infinity;
   let minLat = Infinity;
   let maxLat = -Infinity;
 
-  for (const line of lines) {
-    for (const [lng, lat] of line.path) {
+  for (const feature of features) {
+    const coords: LngLat[] =
+      feature.kind === "line" ? feature.path : [[feature.lng, feature.lat]];
+    for (const [lng, lat] of coords) {
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
       minLng = Math.min(minLng, lng);
       maxLng = Math.max(maxLng, lng);
@@ -377,20 +390,6 @@ function fitZoom27700(
   return 0;
 }
 
-function computeLinePadding(lines: LineLayer[]): number {
-  let maxPadding = 0;
-
-  for (const line of lines) {
-    const border = line.style.borderWidth ?? 0;
-    const padding = line.style.width / 2 + border;
-
-    if (Number.isFinite(padding)) {
-      maxPadding = Math.max(maxPadding, padding);
-    }
-  }
-
-  return maxPadding;
-}
 
 function latRad(lat: number): number {
   const clamped = Math.max(Math.min(lat, MERCATOR_MAX_LAT), -MERCATOR_MAX_LAT);

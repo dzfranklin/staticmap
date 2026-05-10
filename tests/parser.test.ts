@@ -31,30 +31,31 @@ describe("parsePath", () => {
 describe("buildOptions", () => {
   it("tracks style state across line commands", () => {
     const commands = parsePath(
-      `/map:osm/stroke:%23ffffff/width:10/border:%23000000/borderWidth:12/line:${samplePolyline}/width:4/line:${samplePolyline}`,
+      `/map:osm/color:%23ffffff/width:10/border:%23000000/borderWidth:12/line:${samplePolyline}/width:4/line:${samplePolyline}`,
     ).commands;
 
     const options = buildOptions(commands, {
       tiles: ["https://example.com/{z}/{x}/{y}.png"],
     });
-    expect(options.lines.length).toBe(2);
-    expect(options.lines[0]!.style.stroke).toBe("#ffffff");
-    expect(options.lines[0]!.style.width).toBe(10);
-    expect(options.lines[0]!.style.borderStroke).toBe("#000000");
-    expect(options.lines[0]!.style.borderWidth).toBe(12);
-    expect(options.lines[1]!.style.stroke).toBe("#ffffff");
-    expect(options.lines[1]!.style.width).toBe(4);
-    expect(options.lines[1]!.style.borderStroke).toBe("#000000");
-    expect(options.lines[1]!.style.borderWidth).toBe(12);
+    const lines = options.features.filter((f) => f.kind === "line");
+    expect(lines.length).toBe(2);
+    expect(lines[0]!.style.color).toBe("#ffffff");
+    expect(lines[0]!.style.width).toBe(10);
+    expect(lines[0]!.style.borderStroke).toBe("#000000");
+    expect(lines[0]!.style.borderWidth).toBe(12);
+    expect(lines[1]!.style.color).toBe("#ffffff");
+    expect(lines[1]!.style.width).toBe(4);
+    expect(lines[1]!.style.borderStroke).toBe("#000000");
+    expect(lines[1]!.style.borderWidth).toBe(12);
   });
 });
 
 describe("parsePath", () => {
   it("parses full request", () => {
     const path =
-      "/map:osm/size:600x150/padding:12/zoom:10.5/center:-122.4,37.77/stroke:%23ffffff/width:10/line:" +
+      "/map:osm/size:600x150/padding:12/zoom:10.5/center:-122.4,37.77/color:%23ffffff/width:10/line:" +
       samplePolyline +
-      "/stroke:%232563eb/width:4/border:%23000000/borderWidth:8/line:" +
+      "/color:%232563eb/width:4/border:%23000000/borderWidth:8/line:" +
       samplePolyline;
 
     const result = parsePath(path);
@@ -65,13 +66,14 @@ describe("parsePath", () => {
     expect(options.padding).toBe(12);
     expect(options.zoom).toBe(10.5);
     expect(options.center).toEqual({ lng: -122.4, lat: 37.77 });
-    expect(options.lines.length).toBe(2);
-    expect(options.lines[0]!.style.stroke).toBe("#ffffff");
-    expect(options.lines[0]!.style.width).toBe(10);
-    expect(options.lines[1]!.style.stroke).toBe("#2563eb");
-    expect(options.lines[1]!.style.width).toBe(4);
-    expect(options.lines[1]!.style.borderStroke).toBe("#000000");
-    expect(options.lines[1]!.style.borderWidth).toBe(8);
+    const lines = options.features.filter((f) => f.kind === "line");
+    expect(lines.length).toBe(2);
+    expect(lines[0]!.style.color).toBe("#ffffff");
+    expect(lines[0]!.style.width).toBe(10);
+    expect(lines[1]!.style.color).toBe("#2563eb");
+    expect(lines[1]!.style.width).toBe(4);
+    expect(lines[1]!.style.borderStroke).toBe("#000000");
+    expect(lines[1]!.style.borderWidth).toBe(8);
   });
 
   it("rejects missing source key", () => {
@@ -99,14 +101,15 @@ describe("serializePath", () => {
       `/padding:16` +
       `/zoom:12` +
       `/center:-122.4,37.77` +
-      `/stroke:%23ff0000` +
+      `/color:%23ff0000` +
       `/width:6` +
       `/border:%23000000` +
       `/borderWidth:3` +
       `/line:${samplePolyline}` +
-      `/stroke:%232563eb` +
+      `/color:%232563eb` +
       `/width:4` +
       `/line:4:${samplePolyline}` +
+      `/point:-122.400000,37.770000` +
       `/pageOverlap:80`;
     const { sourceKey, commands } = parsePath(original);
     const serialized = serializePath(sourceKey, commands);
@@ -117,9 +120,9 @@ describe("serializePath", () => {
   });
 
   it("encodes color values", () => {
-    const { sourceKey, commands } = parsePath(`/map:osm/stroke:%23aabbcc/line:${samplePolyline}`);
+    const { sourceKey, commands } = parsePath(`/map:osm/color:%23aabbcc/line:${samplePolyline}`);
     const url = serializePath(sourceKey, commands);
-    expect(url).toContain("stroke:%23aabbcc");
+    expect(url).toContain("color:%23aabbcc");
   });
 
   it("encodes ? in polyline values", () => {

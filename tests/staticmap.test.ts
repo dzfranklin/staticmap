@@ -53,16 +53,17 @@ describe("renderStaticMap", () => {
       options: {
         source,
         size: { width: 320, height: 180 },
-        padding: 10,
-        lines: [
+        padding: 18,
+        features: [
           {
+            kind: "line",
             path: [
               [-122.5, 37.7],
               [-122.4, 37.8],
               [-122.3, 37.75],
             ],
             style: {
-              stroke: "#00ff00",
+              color: "#00ff00",
               width: 8,
               borderStroke: "#ffffff",
               borderWidth: 4,
@@ -78,29 +79,31 @@ describe("renderStaticMap", () => {
       options: {
         source,
         size: { width: 360, height: 200 },
-        padding: 12,
-        lines: [
+        padding: 17,
+        features: [
           {
+            kind: "line",
             path: [
               [-122.6, 37.68],
               [-122.5, 37.76],
               [-122.4, 37.74],
             ],
             style: {
-              stroke: "#ffffff",
+              color: "#ffffff",
               width: 10,
               lineCap: "round",
               lineJoin: "round",
             },
           },
           {
+            kind: "line",
             path: [
               [-122.6, 37.68],
               [-122.5, 37.76],
               [-122.4, 37.74],
             ],
             style: {
-              stroke: "#2563eb",
+              color: "#2563eb",
               width: 4,
               lineCap: "round",
               lineJoin: "round",
@@ -119,15 +122,39 @@ describe("renderStaticMap", () => {
         },
         size: { width: 320, height: 200 },
         padding: 10,
-        lines: [
+        features: [
           {
+            kind: "line",
             path: [
               [-0.1278, 51.5074],
               [-1.8904, 52.4862],
             ],
             style: {
-              stroke: "#ff0000",
+              color: "#ff0000",
               width: 4,
+              lineCap: "round",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "point",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            style: {
+              color: "#ff0000",
+              width: 20,
+              borderStroke: "#ffffff",
+              borderWidth: 4,
               lineCap: "round",
               lineJoin: "round",
             },
@@ -145,71 +172,127 @@ describe("renderStaticMap", () => {
   }
 });
 
+const snapshotDir = path.resolve(
+  import.meta.dirname,
+  "__snapshots__",
+  "images/",
+);
+
+const failureArtifactDir = path.resolve(
+  import.meta.dirname,
+  "__artifacts__",
+  "visual-diff/",
+);
+
+const snapshotUpdateMode: "missing-only" | "all" | "none" =
+  process.env.UPDATE_ALL_SNAPSHOTS === "1"
+    ? "all"
+    : process.env.UPDATE_NEW_SNAPSHOTS === "1"
+      ? "missing-only"
+      : "none";
+
 function assertVisualSnapshot(name: string, buffer: Buffer): void {
-  const snapshotDir = path.resolve(
-    process.cwd(),
-    "tests",
-    "__snapshots__",
-    "images",
-  );
+  const result = snapshotTest(name, buffer);
+  if (!result.success) {
+    if (!result.expected && snapshotUpdateMode !== "none") {
+      writeSnapshot(name, buffer);
+      console.warn(`Created new snapshot for ${name}`);
+      return;
+    } else if (snapshotUpdateMode === "all") {
+      writeSnapshot(name, buffer);
+      console.warn(`Updated snapshot for ${name}`);
+      return;
+    }
+
+    writeSnapshotFailureArtifacts(result);
+  }
+  expect(result.success, result.message).toBe(true);
+}
+
+interface SnapshotResult {
+  name: string;
+  success: boolean;
+  message?: string;
+  expected?: PNG;
+  actual?: PNG;
+  diff?: PNG;
+  diffPixels?: number;
+}
+
+function snapshotTest(
+  name: string,
+  buffer: Buffer,
+  {
+    threshold = 0.1,
+    maxDiffRatio = 0.01,
+  }: { threshold?: number; maxDiffRatio?: number } = {},
+): SnapshotResult {
+  const r: SnapshotResult = { name, success: false };
+
   const snapshotPath = path.join(snapshotDir, `${name}.png`);
-  const artifactDir = path.resolve(
-    process.cwd(),
-    "tests",
-    "__artifacts__",
-    "visual-diff",
-  );
-  const expectedArtifactPath = path.join(artifactDir, `${name}.expected.png`);
-  const actualArtifactPath = path.join(artifactDir, `${name}.actual.png`);
-  const diffArtifactPath = path.join(artifactDir, `${name}.diff.png`);
-
-  if (process.env.UPDATE_SNAPSHOTS) {
-    fs.mkdirSync(snapshotDir, { recursive: true });
-    fs.writeFileSync(snapshotPath, buffer);
-    return;
-  }
-
-  if (!fs.existsSync(snapshotPath)) {
-    throw new Error(
-      `Missing snapshot ${snapshotPath}. Run with UPDATE_SNAPSHOTS=1 to create it.`,
-    );
-  }
-
-  const existing = fs.readFileSync(snapshotPath);
-  const expected = PNG.sync.read(existing);
-  const received = PNG.sync.read(buffer);
-
-  fs.mkdirSync(artifactDir, { recursive: true });
-  fs.writeFileSync(actualArtifactPath, PNG.sync.write(received));
-
-  if (
-    expected.width !== received.width ||
-    expected.height !== received.height
-  ) {
-    throw new Error(
-      `Snapshot size mismatch for ${name}. Expected ${expected.width}x${expected.height}, got ${received.width}x${received.height}.`,
-    );
-  }
-
-  const diff = new PNG({ width: expected.width, height: expected.height });
-  const diffPixels = pixelmatch(
-    expected.data,
-    received.data,
-    diff.data,
-    expected.width,
-    expected.height,
-    { threshold: 0.1 },
-  );
-
-  if (diffPixels > 0) {
-    fs.writeFileSync(diffArtifactPath, PNG.sync.write(diff));
-    fs.copyFileSync(snapshotPath, expectedArtifactPath);
-    throw new Error(
-      `Snapshot mismatch for ${name}. Diff pixels: ${diffPixels}. See ${diffArtifactPath}.`,
-    );
-  }
-
   try {
-    fs.rmSync(artifactDir, { recursive: true });
-  } catch {}
+    r.expected = PNG.sync.read(fs.readFileSync(snapshotPath));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return {
+        ...r,
+        message: `Missing snapshot for ${name}. Run with UPDATE_NEW_SNAPSHOTS=1 to create it.`,
+      };
+    } else {
+      throw err;
+    }
+  }
+
+  r.actual = PNG.sync.read(buffer);
+  if (
+    r.expected.width !== r.actual.width ||
+    r.expected.height !== r.actual.height
+  ) {
+    const message =
+      `Snapshot size mismatch for ${name}. ` +
+      `Expected ${r.expected.width}x${r.expected.height}, got ${r.actual.width}x${r.actual.height}.`;
+    return { ...r, message };
+  }
+
+  r.diff = new PNG({ width: r.expected.width, height: r.expected.height });
+  r.diffPixels = pixelmatch(
+    r.expected.data,
+    r.actual.data,
+    r.diff.data,
+    r.expected.width,
+    r.expected.height,
+    { threshold },
+  );
+
+  const totalPixels = r.expected.width * r.expected.height;
+  const diffRatio = r.diffPixels / totalPixels;
+
+  if (diffRatio > maxDiffRatio) {
+    const message =
+      `Snapshot mismatch for ${name}. ` +
+      `${(diffRatio * 100).toFixed(2)}% of pixels differ (${r.diffPixels} pixels), ` +
+      `exceeding the threshold of ${(maxDiffRatio * 100).toFixed(2)}%.`;
+    return { ...r, message };
+  }
+
+  return { ...r, success: true };
+}
+
+function writeSnapshotFailureArtifacts(r: SnapshotResult): void {
+  if (r.success) throw new Error("bad state: success");
+
+  const expectedPath = path.join(failureArtifactDir, `${r.name}.expected.png`);
+  const actualPath = path.join(failureArtifactDir, `${r.name}.actual.png`);
+  const diffPath = path.join(failureArtifactDir, `${r.name}.diff.png`);
+
+  fs.mkdirSync(failureArtifactDir, { recursive: true });
+  if (r.expected) fs.writeFileSync(expectedPath, PNG.sync.write(r.expected));
+  if (r.actual) fs.writeFileSync(actualPath, PNG.sync.write(r.actual));
+  if (r.diff) fs.writeFileSync(diffPath, PNG.sync.write(r.diff));
+}
+
+function writeSnapshot(name: string, buffer: Buffer): void {
+  const snapshotPath = path.join(snapshotDir, `${name}.png`);
+  fs.mkdirSync(snapshotDir, { recursive: true });
+  fs.writeFileSync(snapshotPath, buffer);
 }

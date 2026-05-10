@@ -1,5 +1,5 @@
 export interface Style {
-  stroke: string;
+  color: string;
   width: number;
   borderStroke?: string;
   borderWidth?: number;
@@ -9,7 +9,7 @@ export interface Style {
 
 export function defaultStyle(): Style {
   return {
-    stroke: "#000000",
+    color: "#000000",
     width: 4,
     lineCap: "round",
     lineJoin: "round",

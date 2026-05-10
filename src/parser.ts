@@ -2,12 +2,12 @@ import {
   decodeLine,
   type StaticMapOptions,
   type StaticMapSource,
-  type LineLayer,
+  type Feature,
 } from "./staticmap.js";
 import { defaultStyle, type Style } from "./style.js";
 
-export interface CommandStroke {
-  type: "stroke";
+export interface CommandColor {
+  type: "color";
   value: string;
 }
 
@@ -59,12 +59,19 @@ export interface CommandPageOverlap {
   value: number;
 }
 
+export interface CommandPoint {
+  type: "point";
+  lng: number;
+  lat: number;
+}
+
 export type Command =
-  | CommandStroke
+  | CommandColor
   | CommandWidth
   | CommandBorder
   | CommandBorderWidth
   | CommandLine
+  | CommandPoint
   | CommandSize
   | CommandPadding
   | CommandZoom
@@ -116,12 +123,12 @@ export function buildOptions(
 
   let style: Style = defaultStyle();
 
-  const lines: LineLayer[] = [];
+  const features: Feature[] = [];
 
   for (const command of commands) {
     switch (command.type) {
-      case "stroke":
-        style = { ...style, stroke: command.value };
+      case "color":
+        style = { ...style, color: command.value };
         break;
       case "width":
         style = { ...style, width: command.value };
@@ -137,9 +144,12 @@ export function buildOptions(
         if (path.length < 2) {
           throw new HttpError(400, "Polyline must contain at least two points");
         }
-        lines.push({ path, style: { ...style } });
+        features.push({ kind: "line", path, style: { ...style } });
         break;
       }
+      case "point":
+        features.push({ kind: "point", lng: command.lng, lat: command.lat, style: { ...style } });
+        break;
       case "size":
         size = { width: command.width, height: command.height };
         break;
@@ -166,7 +176,7 @@ export function buildOptions(
     padding,
     zoom,
     center,
-    lines,
+    features,
     pageOverlap,
   };
 }
@@ -181,11 +191,11 @@ function parseCommandSegment(segment: string): Command {
   const parts = rest.map(decodeSegmentValue);
 
   switch (name) {
-    case "stroke":
+    case "color":
       if (!parts[0]) {
-        throw new HttpError(400, "Expected stroke value");
+        throw new HttpError(400, "Expected color value");
       }
-      return { type: "stroke", value: parts[0] };
+      return { type: "color", value: parts[0] };
     case "width":
       if (!parts[0]) {
         throw new HttpError(400, "Expected width value");
@@ -256,6 +266,18 @@ function parseCommandSegment(segment: string): Command {
       }
       return { type: "pageOverlap", value: parseNumber(parts[0], "pageOverlap") };
     }
+    case "point": {
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected point value");
+      }
+      const coords = parts[0].split(",");
+      if (coords.length !== 2) {
+        throw new HttpError(400, "Point must be <lng>,<lat>");
+      }
+      const lng = parseNumber(coords[0]!, "point.lng");
+      const lat = parseNumber(coords[1]!, "point.lat");
+      return { type: "point", lng, lat };
+    }
     default:
       throw new HttpError(400, `Unknown command: ${name}`);
   }
@@ -292,8 +314,8 @@ export function serializePath(sourceKey: string, commands: Command[]): string {
 
 function serializeCommand(command: Command): string {
   switch (command.type) {
-    case "stroke":
-      return `stroke:${encodeURIComponent(command.value)}`;
+    case "color":
+      return `color:${encodeURIComponent(command.value)}`;
     case "width":
       return `width:${command.value}`;
     case "border":
@@ -314,6 +336,8 @@ function serializeCommand(command: Command): string {
       return `center:${command.lng.toFixed(6)},${command.lat.toFixed(6)}`;
     case "pageOverlap":
       return `pageOverlap:${command.value}`;
+    case "point":
+      return `point:${command.lng.toFixed(6)},${command.lat.toFixed(6)}`;
     default:
       assertNever(command);
   }

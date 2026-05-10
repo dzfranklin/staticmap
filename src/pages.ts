@@ -42,7 +42,7 @@ export function computePages(
     throw new HttpError(400, "pageOverlap must be less than page size");
   }
 
-  if (options.lines.length === 0) {
+  if (options.features.length === 0) {
     throw new HttpError(400, "pages endpoint requires at least one line command");
   }
 
