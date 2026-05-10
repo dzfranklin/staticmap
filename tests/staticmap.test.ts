@@ -1,4 +1,4 @@
-import { createCanvas, registerFont } from "canvas";
+import { createCanvas } from "canvas";
 import fs from "fs";
 import path from "path";
 import pixelmatch from "pixelmatch";
