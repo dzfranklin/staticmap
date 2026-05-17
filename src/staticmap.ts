@@ -248,6 +248,25 @@ export async function renderStaticMap(
       );
 
       ctx.drawImage(image, drawX, drawY, drawX2 - drawX, drawY2 - drawY);
+
+      if (options.debug) {
+        const dw = drawX2 - drawX;
+        const dh = drawY2 - drawY;
+        const label = `${tileZ}/${normalized.x}/${normalized.y}`;
+        const pad = 4 * internalScale;
+
+        ctx.save();
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([16, 16]);
+        ctx.strokeRect(drawX, drawY, dw, dh);
+        ctx.fillStyle = "black";
+        ctx.font = `${10 * internalScale}px monospace`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(label, drawX + pad, drawY + pad);
+        ctx.restore();
+      }
     }
   }
 
