@@ -1,6 +1,6 @@
 import { type CanvasRenderingContext2D } from "canvas";
 import { type LabelAnchor, type Style } from "./style.js";
-import { type Crs, type StaticMapOptions } from "./staticmap.js";
+import { type Crs, type Options } from "./staticmap.js";
 
 export interface PixelRect {
   minX: number;
@@ -53,7 +53,7 @@ export class LineNode extends SceneNode {
     ctx.lineCap = this.style.lineCap;
     ctx.lineJoin = this.style.lineJoin;
 
-    const dash = this.style.dasharray;
+    const dash = this.style.lineDasharray;
 
     if ((this.style.borderWidth ?? 0) > 0) {
       const w = this.style.width + this.style.borderWidth! * 2;
@@ -86,12 +86,14 @@ export class PointNode extends SceneNode {
   private readonly x: number;
   private readonly y: number;
   private readonly style: Style;
+  private readonly label?: string;
 
-  constructor(x: number, y: number, style: Style) {
+  constructor(x: number, y: number, style: Style, label?: string) {
     super();
     this.x = x;
     this.y = y;
     this.style = style;
+    this.label = label;
   }
 
   intersectsRect(rect: PixelRect): boolean {
@@ -123,7 +125,7 @@ export class PointNode extends SceneNode {
     ctx.fillStyle = this.style.color;
     ctx.fill();
 
-    if (this.style.label) {
+    if (this.label) {
       const outerR = r + (this.style.borderWidth ?? 0);
       const [dx, dy, textAlign, textBaseline] = labelLayout(
         this.style.labelAnchor,
@@ -136,16 +138,16 @@ export class PointNode extends SceneNode {
         ctx.lineWidth = this.style.labelHaloWidth * 2;
         ctx.lineJoin = "round";
         ctx.strokeStyle = this.style.labelHaloColor;
-        ctx.strokeText(this.style.label, this.x + dx, this.y + dy);
+        ctx.strokeText(this.label, this.x + dx, this.y + dy);
       }
       ctx.fillStyle = this.style.labelColor;
-      ctx.fillText(this.style.label, this.x + dx, this.y + dy);
+      ctx.fillText(this.label, this.x + dx, this.y + dy);
     }
   }
 }
 
 export function buildScene(
-  options: StaticMapOptions,
+  options: Options,
   zoom: number,
   crs: Crs,
 ): SceneNode[] {
@@ -164,7 +166,7 @@ export function buildScene(
       nodes.push(new LineNode(segments, feature.style));
     } else {
       const { x, y } = crs.lngLatToPixel(feature.lng, feature.lat, zoom);
-      nodes.push(new PointNode(x, y, feature.style));
+      nodes.push(new PointNode(x, y, feature.style, feature.label));
     }
   }
 

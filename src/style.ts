@@ -1,18 +1,6 @@
-import { z } from "zod";
+import type { LabelAnchor } from "./commands/enums.js";
 
-export const LabelAnchorSchema = z.enum([
-  "center",
-  "left",
-  "right",
-  "top",
-  "bottom",
-  "top-left",
-  "top-right",
-  "bottom-left",
-  "bottom-right",
-]);
-
-export type LabelAnchor = z.infer<typeof LabelAnchorSchema>;
+export { LabelAnchor };
 
 export interface Style {
   color: string;
@@ -22,28 +10,11 @@ export interface Style {
   lineCap: CanvasLineCap;
   lineJoin: CanvasLineJoin;
   /** Dash pattern as alternating dash/gap lengths scaled by line width, like maplibre's line-dasharray. */
-  dasharray?: number[];
-  label?: string;
+  lineDasharray?: number[];
   labelColor: string;
   labelAnchor: LabelAnchor;
   labelOffset: number;
   labelSize: number;
   labelHaloWidth: number;
   labelHaloColor: string;
-}
-
-export function defaultStyle(): Style {
-  return {
-    color: "#000000",
-    width: 4,
-    lineCap: "round",
-    lineJoin: "round",
-    borderColor: "#000000",
-    labelSize: 16,
-    labelAnchor: "bottom",
-    labelOffset: 2,
-    labelColor: "#000000",
-    labelHaloWidth: 0,
-    labelHaloColor: "#FFFFFF",
-  };
 }

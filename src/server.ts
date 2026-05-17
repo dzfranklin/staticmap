@@ -4,10 +4,11 @@ import path from "path";
 import { pinoHttp } from "pino-http";
 import process from "process";
 import { z } from "zod";
-import { buildOptions, parsePath, HttpError } from "./parser.js";
-import { renderStaticMap, type StaticMapSource } from "./staticmap.js";
+import { buildOptions, parsePath } from "./parser.js";
+import { renderStaticMap, type Source } from "./staticmap.js";
 import { logger } from "./logger.js";
-import { handleError, handleJsonError } from "./error.js";
+import { HttpError } from "./errors.js";
+import { handleError, handleJsonError } from "./error-handlers.js";
 import { computePages } from "./pages.js";
 
 const sourcesFile =
@@ -31,7 +32,7 @@ const sourceSchema = z.object({
     .default("EPSG:3857"),
 });
 
-const sourcesSchema: z.ZodType<Record<string, StaticMapSource>> = z.record(
+const sourcesSchema: z.ZodType<Record<string, Source>> = z.record(
   z.string(),
   sourceSchema,
 );
@@ -39,7 +40,7 @@ const sourcesSchema: z.ZodType<Record<string, StaticMapSource>> = z.record(
 let cachedSources: {
   path: string;
   mtimeMs: number;
-  sources: Record<string, StaticMapSource>;
+  sources: Record<string, Source>;
 } | null = null;
 
 const publicDir = path.resolve(process.cwd(), "public");
@@ -109,7 +110,7 @@ process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 async function loadSources(
   sourcesPath: string,
-): Promise<Record<string, StaticMapSource>> {
+): Promise<Record<string, Source>> {
   const resolvedPath = path.resolve(sourcesPath);
   const stats = await fs.stat(resolvedPath);
 

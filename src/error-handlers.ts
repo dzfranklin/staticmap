@@ -1,5 +1,5 @@
 import { createCanvas, CanvasRenderingContext2D } from "canvas";
-import { HttpError } from "./parser.js";
+import { HttpError } from "./errors.js";
 import express from "express";
 import { logger } from "./logger.js";
 

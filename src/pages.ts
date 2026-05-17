@@ -3,9 +3,11 @@ import {
   serializePath,
   prependCommandOnce,
   type Command,
+  PageOverlapCommand,
+  CenterCommand,
 } from "./parser.js";
-import { computeBbox, getCrs, type StaticMapSource } from "./staticmap.js";
-import { HttpError } from "./parser.js";
+import { computeBbox, getCrs, type Source } from "./staticmap.js";
+import { HttpError } from "./errors.js";
 import { buildScene, type PixelRect } from "./scene.js";
 
 const DEFAULT_PAGE_OVERLAP = 50;
@@ -28,7 +30,7 @@ export interface ComputePagesResult {
 export function computePages(
   sourceKey: string,
   commands: Command[],
-  source: StaticMapSource,
+  source: Source,
 ): ComputePagesResult {
   const options = buildOptions(commands, source);
 
@@ -78,10 +80,10 @@ export function computePages(
 
   const crs = getCrs(source);
   const nodes = buildScene(options, zoom, crs);
-  const baseCommands = prependCommandOnce(commands, {
-    type: "pageOverlap",
-    value: pageOverlap,
-  });
+  const baseCommands = prependCommandOnce(
+    commands,
+    new PageOverlapCommand({ value: pageOverlap }),
+  );
 
   const pages: PageTile[] = [];
   for (let row = 0; row < numRows; row++) {
@@ -122,11 +124,10 @@ export function computePages(
         maxLat: topLeft.lat,
         maxLng: bottomRight.lng,
       };
-      const pageCommands = prependCommandOnce(baseCommands, {
-        type: "center",
-        lng: center.lng,
-        lat: center.lat,
-      });
+      const pageCommands = prependCommandOnce(
+        baseCommands,
+        new CenterCommand({ lng: center.lng, lat: center.lat }),
+      );
       const url = serializePath(sourceKey, pageCommands);
 
       pages.push({ url, row, col, center, size, bounds });

@@ -4,12 +4,8 @@ import path from "path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  renderStaticMap,
-  StaticMapOptions,
-  StaticMapSource,
-} from "../src/staticmap.js";
-import { defaultStyle, Style } from "../src/style.js";
+import { renderStaticMap, Options, Source } from "../src/staticmap.js";
+import { DEFAULT_STYLE } from "../src/commands/index.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -45,7 +41,7 @@ afterEach(() => {
 const source = {
   tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
   tileSize: 256,
-} satisfies StaticMapSource;
+} satisfies Source;
 
 describe("renderStaticMap", () => {
   const cases = [
@@ -64,7 +60,7 @@ describe("renderStaticMap", () => {
               [-122.3, 37.75],
             ],
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#00ff00",
               width: 8,
               borderColor: "#ffffff",
@@ -91,7 +87,7 @@ describe("renderStaticMap", () => {
               [-122.4, 37.74],
             ],
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#ffffff",
               width: 10,
               lineCap: "round",
@@ -106,7 +102,7 @@ describe("renderStaticMap", () => {
               [-122.4, 37.74],
             ],
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#2563eb",
               width: 4,
               lineCap: "round",
@@ -134,7 +130,7 @@ describe("renderStaticMap", () => {
               [-1.8904, 52.4862],
             ],
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#ff0000",
               width: 4,
               lineCap: "round",
@@ -159,10 +155,10 @@ describe("renderStaticMap", () => {
               [-122.3, 37.75],
             ],
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#e11d48",
               width: 6,
-              dasharray: [2, 1],
+              lineDasharray: [2, 1],
               lineCap: "butt",
               lineJoin: "round",
             },
@@ -182,7 +178,7 @@ describe("renderStaticMap", () => {
             lng: -122.4,
             lat: 37.77,
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#ff0000",
               width: 20,
               borderColor: "#ffffff",
@@ -205,15 +201,15 @@ describe("renderStaticMap", () => {
             kind: "point",
             lng: -122.4,
             lat: 37.77,
+            label: "Hello",
             style: {
-              ...defaultStyle(),
+              ...DEFAULT_STYLE,
               color: "#ff0000",
               width: 20,
               borderColor: "#ffffff",
               borderWidth: 4,
               lineCap: "round",
               lineJoin: "round",
-              label: "Hello",
               labelColor: "#1e3a5f",
               labelAnchor: "top",
               labelOffset: 4,
@@ -226,7 +222,7 @@ describe("renderStaticMap", () => {
     },
   ] satisfies {
     name: string;
-    options: StaticMapOptions;
+    options: Options;
   }[];
 
   for (const testCase of cases) {
@@ -237,7 +233,7 @@ describe("renderStaticMap", () => {
   }
 
   it("renders with debug overlay without error", async () => {
-    const options: StaticMapOptions = {
+    const options: Options = {
       source,
       size: { width: 320, height: 180 },
       padding: 16,
@@ -250,7 +246,7 @@ describe("renderStaticMap", () => {
             [-122.5, 37.7],
             [-122.4, 37.8],
           ],
-          style: { ...defaultStyle(), color: "#ff0000", width: 4 },
+          style: { ...DEFAULT_STYLE, color: "#ff0000", width: 4 },
         },
       ],
     };

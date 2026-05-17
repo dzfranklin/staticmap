@@ -1,6 +1,6 @@
 import "./fonts.js";
 import { createCanvas, loadImage } from "canvas";
-import { decodePolyline, type LngLat } from "./polyline.js";
+import { type LngLat } from "./commands/feature.js";
 import proj4 from "proj4";
 import { buildScene, PixelRect } from "./scene.js";
 import type { Style } from "./style.js";
@@ -17,7 +17,7 @@ const EPSG27700_ORIGIN: [number, number] = [-238375.0, 1376256.0];
 
 proj4.defs("EPSG:27700", EPSG27700_PROJ);
 
-export interface StaticMapSource {
+export interface Source {
   tiles: string[];
   tileSize?: number;
   minzoom?: number;
@@ -28,7 +28,7 @@ export interface StaticMapSource {
 
 export interface LineFeature {
   kind: "line";
-  path: LngLat[];
+  path: readonly LngLat[];
   style: Style;
 }
 
@@ -37,12 +37,13 @@ export interface PointFeature {
   lng: number;
   lat: number;
   style: Style;
+  label?: string;
 }
 
 export type Feature = LineFeature | PointFeature;
 
-export interface StaticMapOptions {
-  source: StaticMapSource;
+export interface Options {
+  source: Source;
   size: {
     width: number;
     height: number;
@@ -143,13 +144,13 @@ const epsg27700Crs: Crs = {
   },
 };
 
-export function getCrs(source: StaticMapSource): Crs {
+export function getCrs(source: Source): Crs {
   if (source.crs === "EPSG:27700") return epsg27700Crs;
   return epsg3857Crs;
 }
 
 export function computeBbox(
-  options: StaticMapOptions & { zoom: number },
+  options: Options & { zoom: number },
 ): { minX: number; maxX: number; minY: number; maxY: number } | null {
   const crs = getCrs(options.source);
   let minX = Infinity,
@@ -158,7 +159,7 @@ export function computeBbox(
     maxY = -Infinity;
 
   for (const feature of options.features) {
-    const coords: LngLat[] =
+    const coords: readonly LngLat[] =
       feature.kind === "line" ? feature.path : [[feature.lng, feature.lat]];
     for (const [lng, lat] of coords) {
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
@@ -187,7 +188,7 @@ export interface StaticMapResult {
 }
 
 export async function renderStaticMap(
-  options: StaticMapOptions,
+  options: Options,
 ): Promise<StaticMapResult> {
   const internalScale = 2;
   const sourceTileSize = options.source.tileSize ?? 256;
@@ -340,12 +341,8 @@ export async function renderStaticMap(
   };
 }
 
-export function decodeLine(encoded: string, precision?: number): LngLat[] {
-  return decodePolyline(encoded, precision);
-}
-
 export function resolveView(
-  options: StaticMapOptions,
+  options: Options,
   sourceTileSize: number,
 ): { zoom: number; center: { lng: number; lat: number } } {
   const bounds = computeBounds(options.features);
@@ -406,7 +403,7 @@ function computeBounds(
   let maxLat = -Infinity;
 
   for (const feature of features) {
-    const coords: LngLat[] =
+    const coords: readonly LngLat[] =
       feature.kind === "line" ? feature.path : [[feature.lng, feature.lat]];
     for (const [lng, lat] of coords) {
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
