@@ -1,7 +1,7 @@
 import {
   buildOptions,
-  parsePath,
   serializePath,
+  prependCommandOnce,
   type Command,
 } from "./parser.js";
 import { computeBbox, getCrs, type StaticMapSource } from "./staticmap.js";
@@ -78,7 +78,10 @@ export function computePages(
 
   const crs = getCrs(source);
   const nodes = buildScene(options, zoom, crs);
-  const commandsWithoutCenter = commands.filter((c) => c.type !== "center");
+  const baseCommands = prependCommandOnce(commands, {
+    type: "pageOverlap",
+    value: pageOverlap,
+  });
 
   const pages: PageTile[] = [];
   for (let row = 0; row < numRows; row++) {
@@ -111,10 +114,11 @@ export function computePages(
         maxLat: topLeft.lat,
         maxLng: bottomRight.lng,
       };
-      const pageCommands: Command[] = [
-        ...commandsWithoutCenter,
-        { type: "center", lng: center.lng, lat: center.lat },
-      ];
+      const pageCommands = prependCommandOnce(baseCommands, {
+        type: "center",
+        lng: center.lng,
+        lat: center.lat,
+      });
       const url = serializePath(sourceKey, pageCommands);
 
       pages.push({ url, row, col, center, size, bounds });

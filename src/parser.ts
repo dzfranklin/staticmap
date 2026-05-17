@@ -60,6 +60,10 @@ export interface CommandPageOverlap {
   value: number;
 }
 
+export interface CommandDebug {
+  type: "debug";
+}
+
 export interface CommandDash {
   type: "dash";
   value: number[];
@@ -137,7 +141,8 @@ export type Command =
   | CommandPadding
   | CommandZoom
   | CommandCenter
-  | CommandPageOverlap;
+  | CommandPageOverlap
+  | CommandDebug;
 
 export class HttpError extends Error {
   status: number;
@@ -181,6 +186,7 @@ export function buildOptions(
   let zoom: number | undefined;
   let center: { lng: number; lat: number } | undefined;
   let pageOverlap: number | undefined;
+  let debug = false;
 
   let style: Style = defaultStyle();
 
@@ -272,6 +278,9 @@ export function buildOptions(
       case "pageOverlap":
         pageOverlap = command.value;
         break;
+      case "debug":
+        debug = true;
+        break;
       default:
         assertNever(command);
     }
@@ -285,10 +294,13 @@ export function buildOptions(
     center,
     features,
     pageOverlap,
+    debug,
   };
 }
 
 function parseCommandSegment(segment: string): Command {
+  if (segment === "debug") return { type: "debug" };
+
   const rawParts = segment.split(":");
   if (rawParts.length < 2) {
     throw new HttpError(400, `Invalid command segment: ${segment}`);
@@ -400,6 +412,8 @@ function parseCommandSegment(segment: string): Command {
         value: parseNumber(parts[0], "pageOverlap"),
       };
     }
+    case "debug":
+      return { type: "debug" };
     case "label":
       if (!parts[0]) {
         throw new HttpError(400, "Expected label value");
@@ -490,6 +504,13 @@ function assertNever(value: never): never {
   throw new HttpError(400, `Unexpected command: ${JSON.stringify(value)}`);
 }
 
+export function prependCommandOnce(
+  commands: Command[],
+  command: Command,
+): Command[] {
+  return [command, ...commands.filter((c) => c.type !== command.type)];
+}
+
 export function serializePath(sourceKey: string, commands: Command[]): string {
   const segments = commands.map(serializeCommand);
   return `/map:${sourceKey}/${segments.join("/")}`;
@@ -539,6 +560,8 @@ function serializeCommand(command: Command): string {
       return `center:${command.lng.toFixed(6)},${command.lat.toFixed(6)}`;
     case "pageOverlap":
       return `pageOverlap:${command.value}`;
+    case "debug":
+      return "debug";
     case "point":
       return `point:${command.lng.toFixed(6)},${command.lat.toFixed(6)}`;
     default:

@@ -54,6 +54,7 @@ export interface StaticMapOptions {
   };
   features: Feature[];
   pageOverlap?: number;
+  debug?: boolean;
 }
 
 // All pixel coordinates are in source tile pixels (1 tile = sourceTileSize px).
@@ -261,6 +262,35 @@ export async function renderStaticMap(
     ctx.restore();
   }
   ctx.restore();
+
+  if (options.debug) {
+    const w = options.size.width;
+    const h = options.size.height;
+    const s = internalScale;
+    ctx.save();
+    ctx.scale(s, s);
+
+    if (options.pageOverlap !== undefined) {
+      const overlap = options.pageOverlap;
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.rect(overlap, overlap, w - overlap * 2, h - overlap * 2);
+      ctx.fillStyle = "rgba(255, 100, 0, 0.25)";
+      ctx.fill("evenodd");
+      ctx.strokeStyle = "rgba(255, 100, 0, 0.8)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+    }
+
+    const pad = options.padding;
+    ctx.beginPath();
+    ctx.rect(0, 0, w, h);
+    ctx.rect(pad, pad, w - pad * 2, h - pad * 2);
+    ctx.fillStyle = "rgba(0, 100, 255, 0.25)";
+    ctx.fill("evenodd");
+
+    ctx.restore();
+  }
 
   const buffer = canvas.toBuffer("image/png");
 

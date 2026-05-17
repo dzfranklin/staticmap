@@ -235,6 +235,30 @@ describe("renderStaticMap", () => {
       assertVisualSnapshot(testCase.name, buffer);
     });
   }
+
+  it("renders with debug overlay without error", async () => {
+    const options: StaticMapOptions = {
+      source,
+      size: { width: 320, height: 180 },
+      padding: 16,
+      pageOverlap: 60,
+      debug: true,
+      features: [
+        {
+          kind: "line",
+          path: [
+            [-122.5, 37.7],
+            [-122.4, 37.8],
+          ],
+          style: { ...defaultStyle(), color: "#ff0000", width: 4 },
+        },
+      ],
+    };
+    const { buffer } = await renderStaticMap(options);
+    const png = PNG.sync.read(buffer);
+    expect(png.width).toBe(options.size.width * 2);
+    expect(png.height).toBe(options.size.height * 2);
+  });
 });
 
 const snapshotDir = path.resolve(

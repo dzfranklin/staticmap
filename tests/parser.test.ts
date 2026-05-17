@@ -98,6 +98,18 @@ describe("parsePath", () => {
     const options = buildOptions(commands, source);
     expect(options.pageOverlap).toBe(100);
   });
+
+  it("parses debug command", () => {
+    const { commands } = parsePath(`/map:osm/debug/line:${samplePolyline}`);
+    const options = buildOptions(commands, source);
+    expect(options.debug).toBe(true);
+  });
+
+  it("debug defaults to false when absent", () => {
+    const { commands } = parsePath(`/map:osm/line:${samplePolyline}`);
+    const options = buildOptions(commands, source);
+    expect(options.debug).toBe(false);
+  });
 });
 
 describe("label command", () => {
@@ -172,7 +184,8 @@ describe("serializePath", () => {
       `/point:-122.400000,37.770000` +
       `/labelHaloWidth:2` +
       `/labelHaloColor:%23ffffff` +
-      `/pageOverlap:80`;
+      `/pageOverlap:80` +
+      `/debug`;
     const { sourceKey, commands } = parsePath(original);
     const serialized = serializePath(sourceKey, commands);
     expect(Array.from(serialized.matchAll(/\//g)).length).toBe(
