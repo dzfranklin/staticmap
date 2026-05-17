@@ -46,6 +46,7 @@ export type BorderWidthCommand = InstanceType<typeof BorderWidthCommand>;
 export const LineDasharrayCommand = defineStyleCommand({
   type: "lineDasharray",
   alt: ["dash"],
+  example: [[8, 4]],
   args: [arg("values", z.number(), [] as number[], { rest: true })] as const,
   applyStyle: (style, { values }) => {
     if (values.some((v) => v <= 0))

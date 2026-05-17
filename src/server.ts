@@ -10,6 +10,8 @@ import { logger } from "./logger.js";
 import { HttpError } from "./errors.js";
 import { handleError, handleJsonError } from "./error-handlers.js";
 import { computePages } from "./pages.js";
+import schema from "./commands/schema.js";
+import { generateDocs as generateReference } from "./docs/generator.js";
 
 const sourcesFile =
   process.env.SOURCES_FILE ?? path.resolve(process.cwd(), "sources.json");
@@ -45,8 +47,33 @@ let cachedSources: {
 
 const publicDir = path.resolve(process.cwd(), "public");
 
+app.use(express.static(publicDir));
+
 app.get("/", async (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
+});
+
+app.get("/schema.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.status(200).json(schema);
+});
+
+app.get("/docs/reference", (_req, res) => {
+  const body = generateReference(schema);
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Command Reference</title>
+<link rel="stylesheet" href="/docs.css">
+</head>
+<body>
+${body}
+</body>
+</html>`;
+  res.setHeader("Content-Type", "text/html");
+  res.status(200).send(html);
 });
 
 app.get(/^\/map:/, async (req, res) => {

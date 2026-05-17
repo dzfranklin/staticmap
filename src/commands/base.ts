@@ -6,15 +6,24 @@ import { ParseError } from "../errors.js";
 // # Arg types
 
 type ArgSchema = z.ZodString | z.ZodNumber | z.ZodEnum<Record<string, string>>;
+type ArgValueType = z.infer<ArgSchema>;
 
-export interface ArgDef<Name extends string = string, T = unknown> {
+export type ExampleValue = ArgValueType | ArgValueType[];
+
+export interface ArgDef<
+  Name extends string = string,
+  T extends ArgValueType = ArgValueType,
+> {
   name: Name;
   schema: ArgSchema & z.ZodType<T>;
   rest?: boolean;
   _type: T;
 }
 
-export type StyleArgDef<Name extends string = string, T = unknown> =
+export type StyleArgDef<
+  Name extends string = string,
+  T extends ArgValueType = ArgValueType,
+> =
   | (ArgDef<Name, T> & { rest?: false; default: T })
   | (ArgDef<Name, T> & { rest: true; default: T[] });
 
@@ -26,7 +35,7 @@ export type ArgsToData<T extends readonly ArgDef[]> = {
   [A in T[number] as A["name"]]: ArgValue<A>;
 };
 
-export function arg<Name extends string, T>(
+export function arg<Name extends string, T extends ArgValueType>(
   name: Name,
   schema: ArgSchema & z.ZodType<T>,
   opts: { rest?: boolean } = {},
@@ -34,19 +43,19 @@ export function arg<Name extends string, T>(
   return { name, schema, ...opts, _type: undefined as unknown as T };
 }
 
-export function styleArg<Name extends string, T>(
+export function styleArg<Name extends string, T extends ArgValueType>(
   name: Name,
   schema: ArgSchema & z.ZodType<T>,
   defaultValue: T,
   opts?: { rest?: false },
 ): StyleArgDef<Name, T> & { rest: false; default: T };
-export function styleArg<Name extends string, T>(
+export function styleArg<Name extends string, T extends ArgValueType>(
   name: Name,
   schema: ArgSchema & z.ZodType<T>,
   defaultValue: T[],
   opts: { rest: true },
 ): StyleArgDef<Name, T> & { rest: true; default: T[] };
-export function styleArg<Name extends string, T>(
+export function styleArg<Name extends string, T extends ArgValueType>(
   name: Name,
   schema: ArgSchema & z.ZodType<T>,
   defaultValue: T | T[],
@@ -211,16 +220,23 @@ export abstract class FeatureCommand extends Command {
 }
 
 export type CommandClass = {
+  readonly category: CategoryType;
   readonly type: string;
   readonly alt: string[];
   readonly args: ArgDef[];
+  readonly example?: readonly ExampleValue[];
   parse(name: string, parts: string[]): Command;
 };
 
-export type StyleCommandClass = CommandClass & { default(): StyleCommand };
-export type GlobalCommandClass = CommandClass;
-export type FeatureModifierCommandClass = CommandClass;
-export type FeatureCommandClass = CommandClass;
+export type StyleCommandClass = CommandClass & {
+  category: "style";
+  default(): StyleCommand;
+};
+export type GlobalCommandClass = CommandClass & { category: "global" };
+export type FeatureModifierCommandClass = CommandClass & {
+  category: "feature-modifier";
+};
+export type FeatureCommandClass = CommandClass & { category: "feature" };
 
 // # Factory helpers
 
@@ -237,6 +253,7 @@ export function defineStyleCommand<
   type: string;
   alt?: string[];
   args: TArgs;
+  example?: readonly ExampleValue[];
   applyStyle: (style: Partial<Style>, data: ArgsToData<TArgs>) => void;
   parse?: (name: string, parts: string[]) => StyleCommand;
   serialize?: (
@@ -248,6 +265,7 @@ export function defineStyleCommand<
     static readonly type = config.type;
     static readonly alt = config.alt ?? [];
     static readonly args = config.args as unknown as StyleArgDef[];
+    static readonly example = config.example;
     readonly data: ArgsToData<TArgs>;
     constructor(data: ArgsToData<TArgs>) {
       super();
@@ -275,6 +293,7 @@ export function defineGlobalCommand<
   type: string;
   alt?: string[];
   args: TArgs;
+  example?: readonly ExampleValue[];
   applyGlobal: (options: Partial<Options>, data: ArgsToData<TArgs>) => void;
   parse?: (name: string, parts: string[]) => GlobalCommand;
   serialize?: (
@@ -286,6 +305,7 @@ export function defineGlobalCommand<
     static readonly type = config.type;
     static readonly alt = config.alt ?? [];
     static readonly args = config.args as unknown as ArgDef[];
+    static readonly example = config.example;
     readonly data: ArgsToData<TArgs>;
     constructor(data: ArgsToData<TArgs>) {
       super();
@@ -313,6 +333,7 @@ export function defineFeatureModifierCommand<
   type: string;
   alt?: string[];
   args: TArgs;
+  example?: readonly ExampleValue[];
   applyModifier: (modifiers: FeatureModifiers, data: ArgsToData<TArgs>) => void;
   parse?: (name: string, parts: string[]) => FeatureModifierCommand;
   serialize?: (
@@ -324,6 +345,7 @@ export function defineFeatureModifierCommand<
     static readonly type = config.type;
     static readonly alt = config.alt ?? [];
     static readonly args = config.args as unknown as ArgDef[];
+    static readonly example = config.example;
     readonly data: ArgsToData<TArgs>;
     constructor(data: ArgsToData<TArgs>) {
       super();
@@ -351,6 +373,7 @@ export function defineFeatureCommand<
   type: string;
   alt?: string[];
   args: TArgs;
+  example?: readonly ExampleValue[];
   buildFeature: (state: BuildState, data: ArgsToData<TArgs>) => Feature;
   parse?: (name: string, parts: string[]) => FeatureCommand;
   serialize?: (
@@ -362,6 +385,7 @@ export function defineFeatureCommand<
     static readonly type = config.type;
     static readonly alt = config.alt ?? [];
     static readonly args = config.args as unknown as ArgDef[];
+    static readonly example = config.example;
     readonly data: ArgsToData<TArgs>;
     constructor(data: ArgsToData<TArgs>) {
       super();
