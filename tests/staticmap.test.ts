@@ -295,7 +295,7 @@ function snapshotTest(
   buffer: Buffer,
   {
     threshold = 0.1,
-    maxDiffRatio = 0.0005,
+    maxDiffRatio = 0.0001,
   }: { threshold?: number; maxDiffRatio?: number } = {},
 ): SnapshotResult {
   const r: SnapshotResult = { name, success: false };
