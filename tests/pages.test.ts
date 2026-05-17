@@ -52,7 +52,7 @@ describe("computePages", () => {
       `/map:osm/size:400x400/zoom:8/pageOverlap:0/line:${sfToLa}`,
     );
     const withOverlap = pages(
-      `/map:osm/size:400x400/zoom:8/pageOverlap:200/line:${sfToLa}`,
+      `/map:osm/size:400x400/zoom:8/pageOverlap:100/line:${sfToLa}`,
     );
     expect(withOverlap.pages.length).toBeGreaterThanOrEqual(
       noOverlap.pages.length,
@@ -146,6 +146,13 @@ describe("computePages", () => {
     for (const tile of result.pages) {
       expect(tile.url).toMatch(/^\/map:os\//);
     }
+  });
+
+  it("does not emit a page whose only content is in the buffer of an adjacent page", () => {
+    const result = pages(
+      `/map:osm/size:300x300/padding:0/pageOverlap:100/line:qgu{IdqxUvDyH\`DyCjC{Av@eBXEhFuK~@q@Z}BjDsG/zoom:15`,
+    );
+    expect(result.pages.length).toBe(1);
   });
 
   it("excludes pages with no lines passing through them", () => {

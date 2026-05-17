@@ -96,7 +96,15 @@ export function computePages(
         maxY: cy + size.height / 2,
       };
 
-      if (!nodes.some((n) => n.intersectsRect(pageRect))) continue;
+      // Hit-test against the inner (non-buffer) region only — content in the
+      // buffer is already visible on the adjacent page.
+      const innerRect: PixelRect = {
+        minX: col === 0 ? pageRect.minX : pageRect.minX + pageOverlap,
+        maxX: col === numCols - 1 ? pageRect.maxX : pageRect.maxX - pageOverlap,
+        minY: row === 0 ? pageRect.minY : pageRect.minY + pageOverlap,
+        maxY: row === numRows - 1 ? pageRect.maxY : pageRect.maxY - pageOverlap,
+      };
+      if (!nodes.some((n) => n.intersectsRect(innerRect))) continue;
 
       if (pages.length >= MAX_PAGES) {
         throw new HttpError(
