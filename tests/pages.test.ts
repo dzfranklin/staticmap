@@ -25,7 +25,7 @@ function pages(path: string, src: StaticMapSource = source) {
 describe("computePages", () => {
   it("produces multiple pages for a long path at high zoom", () => {
     const result = pages(
-      `/map:osm/size:800x600/zoom:14/pageOverlap:0/line:${sfToLa}`,
+      `/map:osm/size:2000x2000/zoom:14/pageOverlap:0/line:${sfToLa}`,
     );
     expect(result.pages.length).toBeGreaterThan(1);
   });
@@ -39,10 +39,10 @@ describe("computePages", () => {
 
   it("produces more pages at higher zoom", () => {
     const low = pages(
-      `/map:osm/size:400x400/zoom:6/pageOverlap:0/line:${sfToLa}`,
+      `/map:osm/size:2000x2000/zoom:6/pageOverlap:0/line:${sfToLa}`,
     );
     const high = pages(
-      `/map:osm/size:400x400/zoom:10/pageOverlap:0/line:${sfToLa}`,
+      `/map:osm/size:2000x2000/zoom:10/pageOverlap:0/line:${sfToLa}`,
     );
     expect(high.pages.length).toBeGreaterThan(low.pages.length);
   });
@@ -139,7 +139,7 @@ describe("computePages", () => {
 
   it("works with a projected CRS source", () => {
     const { sourceKey, commands } = parsePath(
-      `/map:os/size:400x400/zoom:5/pageOverlap:0/line:${sfToLa}`,
+      `/map:os/size:2000x2000/zoom:5/pageOverlap:0/line:${sfToLa}`,
     );
     const result = computePages(sourceKey, commands, source27700);
     expect(result.pages.length).toBeGreaterThanOrEqual(1);

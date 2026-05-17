@@ -8,6 +8,10 @@ import { computeBbox, getCrs, type StaticMapSource } from "./staticmap.js";
 import { HttpError } from "./parser.js";
 import { buildScene, type PixelRect } from "./scene.js";
 
+const DEFAULT_PAGE_OVERLAP = 50;
+const MAX_GRID_CELLS = 10_000;
+export const MAX_PAGES = 100;
+
 export interface PageTile {
   url: string;
   row: number;
@@ -32,7 +36,7 @@ export function computePages(
   const zoom = options.zoom;
 
   const { size } = options;
-  const pageOverlap = options.pageOverlap ?? 50;
+  const pageOverlap = options.pageOverlap ?? DEFAULT_PAGE_OVERLAP;
 
   if (pageOverlap >= size.width || pageOverlap >= size.height) {
     throw new HttpError(400, "pageOverlap must be less than page size");
@@ -60,6 +64,13 @@ export function computePages(
   const numCols = Math.max(1, Math.ceil((maxX - minX) / strideX));
   const numRows = Math.max(1, Math.ceil((maxY - minY) / strideY));
 
+  if (numCols * numRows > MAX_GRID_CELLS) {
+    throw new HttpError(
+      400,
+      `Request too large: ${numCols} cols x ${numRows} rows = ${numCols * numRows} grid cells (max ${MAX_GRID_CELLS})`,
+    );
+  }
+
   const firstCenterX = minX + size.width / 2;
   const firstCenterY = minY + size.height / 2;
 
@@ -81,6 +92,13 @@ export function computePages(
       };
 
       if (!nodes.some((n) => n.intersectsRect(pageRect))) continue;
+
+      if (pages.length >= MAX_PAGES) {
+        throw new HttpError(
+          400,
+          `Too many pages: result exceeds ${MAX_PAGES} pages`,
+        );
+      }
 
       const center = crs.pixelToLngLat(cx, cy, zoom);
       const pageCommands: Command[] = [
