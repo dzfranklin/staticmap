@@ -888,7 +888,8 @@
 
       function updateUrlBox() {
         try {
-          urlBox.textContent = buildMapUrl();
+          const url = new URL(buildMapUrl(), location.origin);
+          urlBox.textContent = url.toString();
           errorBox.textContent = "";
         } catch (e) {
           if (e instanceof UserError) {
@@ -1124,7 +1125,10 @@
             [b.maxLat, b.maxLng],
           ];
         });
-        leafletMap.fitBounds(allBounds.flat());
+        setTimeout(() => {
+          leafletMap.invalidateSize();
+          leafletMap.fitBounds(allBounds.flat());
+        }, 0);
       }
 
       // event wiring
