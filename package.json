@@ -11,7 +11,7 @@
     "start": "node --import tsx/esm src/server.ts",
     "dev": "tsx watch src/server.ts",
     "check": "prettier --write --log-level warn . && tsc --noEmit",
-    "test": "vitest --run",
+    "test": "vitest --run --silent=passed-only",
     "clean": "rm -rf ./dist",
     "prepare": "husky"
   },
