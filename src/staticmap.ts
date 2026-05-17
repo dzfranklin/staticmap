@@ -178,9 +178,15 @@ export function computeBbox(
   return { minX, maxX, minY, maxY };
 }
 
+export interface StaticMapResult {
+  buffer: Buffer;
+  attribution: string | undefined;
+  bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number };
+}
+
 export async function renderStaticMap(
   options: StaticMapOptions,
-): Promise<Buffer> {
+): Promise<StaticMapResult> {
   const internalScale = 2;
   const sourceTileSize = options.source.tileSize ?? 256;
   const renderWidth = options.size.width * internalScale;
@@ -256,7 +262,24 @@ export async function renderStaticMap(
   }
   ctx.restore();
 
-  return canvas.toBuffer("image/png");
+  const buffer = canvas.toBuffer("image/png");
+
+  const topLeft = crs.pixelToLngLat(topLeftX, topLeftY, zoom);
+  const bottomRight = crs.pixelToLngLat(
+    topLeftX + options.size.width,
+    topLeftY + options.size.height,
+    zoom,
+  );
+  return {
+    buffer,
+    attribution: options.source.attribution,
+    bounds: {
+      minLat: bottomRight.lat,
+      minLng: topLeft.lng,
+      maxLat: topLeft.lat,
+      maxLng: bottomRight.lng,
+    },
+  };
 }
 
 export function decodeLine(encoded: string, precision?: number): LngLat[] {

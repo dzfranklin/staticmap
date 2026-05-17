@@ -57,15 +57,17 @@ app.get(/^\/map:/, async (req, res) => {
       throw new HttpError(400, `Unknown source: ${sourceKey}`);
     }
     const options = buildOptions(commands, source);
-    const buffer = await renderStaticMap(options);
+    const map = await renderStaticMap(options);
 
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24 * 365); // 1 year
-    if (source.attribution) {
-      res.setHeader("X-Map-Attribution", source.attribution);
-    }
+    if (map.attribution) res.setHeader("X-Map-Attribution", map.attribution);
+    res.setHeader(
+      "X-Map-Bounds",
+      `${map.bounds.minLat},${map.bounds.minLng},${map.bounds.maxLat},${map.bounds.maxLng}`,
+    );
 
-    res.status(200).send(buffer);
+    res.status(200).send(map.buffer);
   } catch (error) {
     handleError(error, res);
   }

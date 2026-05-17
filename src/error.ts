@@ -35,6 +35,7 @@ export function handleError(error: unknown, res: express.Response): void {
     .status(status)
     .setHeader("Content-Type", "image/png")
     .setHeader("Cache-Control", "no-store")
+    .setHeader("X-Map-Error", message)
     .send(buffer);
 }
 

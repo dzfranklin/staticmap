@@ -16,7 +16,9 @@ export interface PageTile {
   url: string;
   row: number;
   col: number;
+  size: { width: number; height: number };
   center: { lng: number; lat: number };
+  bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number };
 }
 
 export interface ComputePagesResult {
@@ -101,13 +103,21 @@ export function computePages(
       }
 
       const center = crs.pixelToLngLat(cx, cy, zoom);
+      const topLeft = crs.pixelToLngLat(pageRect.minX, pageRect.minY, zoom);
+      const bottomRight = crs.pixelToLngLat(pageRect.maxX, pageRect.maxY, zoom);
+      const bounds = {
+        minLat: bottomRight.lat,
+        minLng: topLeft.lng,
+        maxLat: topLeft.lat,
+        maxLng: bottomRight.lng,
+      };
       const pageCommands: Command[] = [
         ...commandsWithoutCenter,
         { type: "center", lng: center.lng, lat: center.lat },
       ];
       const url = serializePath(sourceKey, pageCommands);
 
-      pages.push({ url, row, col, center });
+      pages.push({ url, row, col, center, size, bounds });
     }
   }
 

@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Staticmap Playground</title>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.3/turf.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9/dist/leaflet.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9/dist/leaflet.min.js"></script>
     <style>
       :root {
         color-scheme: light;
@@ -82,10 +87,10 @@
       }
 
       .header-url {
-        padding: 8px 12px;
+        padding: 8px 0;
         background: #f4f1ea;
         border-radius: 8px;
-        font-size: 12px;
+        font-size: 10px;
         word-break: break-all;
         color: #3c3c3c;
         cursor: text;
@@ -227,19 +232,8 @@
         flex-wrap: wrap;
       }
 
-      .preview {
-        display: grid;
-        gap: 16px;
-        align-content: start;
-      }
-
       .preview img {
         display: block;
-      }
-
-      .preview.dirty #preview-grid {
-        opacity: 0.4;
-        transition: opacity 0.2s ease;
       }
 
       .pages-grid {
@@ -249,6 +243,30 @@
 
       .pages-grid img {
         display: block;
+      }
+
+      .page-placeholder {
+        background: #d0d0d0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .page-placeholder-label {
+        font-size: 11px;
+        color: #888;
+        text-align: center;
+      }
+
+      .map-page-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #333;
+        background: rgba(255, 255, 255, 0.75);
+        padding: 1px 4px;
+        border-radius: 3px;
+        white-space: nowrap;
       }
 
       .row.narrow {
@@ -345,6 +363,60 @@
         color: var(--muted);
       }
 
+      .preview-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        margin: -8px -20px 16px;
+        padding: 0 20px;
+      }
+
+      .preview-tab {
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transform: none;
+        box-shadow: none;
+        margin-bottom: -1px;
+      }
+
+      .preview-tab:hover {
+        color: var(--ink);
+        transform: none;
+        box-shadow: none;
+      }
+
+      .preview-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      .preview-tab-content {
+        display: none;
+      }
+
+      .preview-tab-content.active {
+        display: block;
+      }
+
+      .panel.dirty .preview-tab-content.active {
+        opacity: 0.4;
+        transition: opacity 0.2s ease;
+      }
+
+      #map-container {
+        width: 100%;
+        height: 500px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
       @media (max-width: 900px) {
         .row {
           grid-template-columns: 1fr;
@@ -366,6 +438,7 @@
             </p>
           </div>
           <div class="header-buttons">
+            <span id="error" class="header-error"></span>
             <button id="preview" type="button">Preview</button>
             <button id="reset" class="secondary" type="button">Reset</button>
             <label class="pages-mode-label">
@@ -378,7 +451,6 @@
               />
               Pages mode
             </label>
-            <span id="error" class="header-error"></span>
           </div>
         </div>
         <span id="url" class="header-url"></span>
@@ -407,13 +479,28 @@
             </div>
           </div>
         </section>
-        <section class="panel preview">
-          <h2>Preview</h2>
-          <div id="preview-grid" class="pages-grid"></div>
+        <section class="panel" id="preview-panel">
+          <div class="preview-tabs">
+            <button class="preview-tab active" data-tab="image" type="button">
+              Preview
+            </button>
+            <button class="preview-tab" data-tab="map" type="button">
+              Map
+            </button>
+          </div>
+          <div class="preview-tab-content active" id="tab-image">
+            <div id="preview-grid" class="pages-grid"></div>
+          </div>
+          <div class="preview-tab-content" id="tab-map">
+            <div id="map-container"></div>
+            <p id="map-attribution"></p>
+          </div>
         </section>
       </main>
     </form>
     <script>
+      class UserError extends Error {}
+
       const form = document.getElementById("state-form");
       const itemCountInput = document.getElementById("item-count");
       const commandList = document.getElementById("command-list");
@@ -424,8 +511,11 @@
       const addGeoButton = document.getElementById("add-geojson");
       const addPointButton = document.getElementById("add-point");
       const pagesModeCheckbox = document.getElementById("pages-mode");
-      const previewSection = document.querySelector("section.preview");
+      const previewPanel = document.getElementById("preview-panel");
+      const tabImageContent = document.getElementById("tab-image");
       const previewGrid = document.getElementById("preview-grid");
+      const tabMapContent = document.getElementById("tab-map");
+      const mapContainer = document.getElementById("map-container");
 
       const defaultTextCommand =
         "size:600x300/padding:16/color:#0000ff/width:10/border:#ffffff/borderWidth:6";
@@ -688,7 +778,7 @@
       function update() {
         const params = new URLSearchParams(new FormData(form));
         history.replaceState(null, "", "#" + params.toString());
-        previewSection.classList.add("dirty");
+        previewPanel.classList.add("dirty");
         refresh();
       }
 
@@ -749,13 +839,13 @@
 
       function buildMapUrl() {
         const source = document.getElementById("source").value.trim();
-        if (!source) throw new Error("Source key is required.");
+        if (!source) throw new UserError("Source key is required.");
 
         const segments = [`map:${source}`];
 
         const items = readItems();
         if (items.length === 0)
-          throw new Error("Add at least one command item.");
+          throw new UserError("Add at least one command item.");
 
         for (const item of items) {
           if (item.type === "text") {
@@ -770,13 +860,14 @@
             );
           } else {
             const geojsonRaw = item.value.trim();
-            if (!geojsonRaw) throw new Error("GeoJSON item cannot be empty.");
+            if (!geojsonRaw)
+              throw new UserError("GeoJSON item cannot be empty.");
 
             let geojson;
             try {
               geojson = JSON.parse(geojsonRaw);
             } catch {
-              throw new Error("GeoJSON must be valid JSON.");
+              throw new UserError("GeoJSON must be valid JSON.");
             }
 
             if (item.tolerance) {
@@ -800,28 +891,80 @@
           urlBox.textContent = buildMapUrl();
           errorBox.textContent = "";
         } catch (e) {
-          urlBox.textContent = "";
-          errorBox.textContent = e.message || "Invalid input.";
+          if (e instanceof UserError) {
+            urlBox.textContent = "";
+            errorBox.textContent = e.message || "Invalid input.";
+          } else {
+            throw e;
+          }
         }
       }
+
+      // tabs
+
+      let activeTab = "image";
+
+      function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll(".preview-tab").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === tab);
+        });
+        tabImageContent.classList.toggle("active", tab === "image");
+        tabMapContent.classList.toggle("active", tab === "map");
+        if (tab === "map") syncMap();
+      }
+
+      document.querySelectorAll(".preview-tab").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
 
       // preview
 
       const objectUrls = [];
+      let mapPages = [];
 
       function resetPreview() {
         previewGrid.innerHTML = "";
         for (const u of objectUrls) URL.revokeObjectURL(u);
         objectUrls.length = 0;
+        mapPages = [];
+        clearMapOverlay();
       }
 
-      async function renderTile(src, coord) {
+      const PAGES_PREVIEW_LIMIT = 10;
+
+      async function resolvePages(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new UserError(
+            body.error || `Pages request failed: ${response.status}`,
+          );
+        }
+        return (await response.json()).pages;
+      }
+
+      async function fetchMapImage(src, page = null) {
+        const pageCoord = page ? `(${page.col},${page.row})` : null;
         const response = await fetch(src);
+        if (!response.ok) {
+          const errorMessage = response.headers.get("X-Map-Error");
+          const detail = errorMessage ? `: ${errorMessage}` : "";
+          throw new UserError(
+            `Server returned ${response.status} ${response.statusText}${detail}`,
+          );
+        }
         const blob = await response.blob();
         const attribution = response.headers.get("X-Map-Attribution");
+        const boundsHeader = response.headers.get("X-Map-Bounds");
 
         const objectUrl = URL.createObjectURL(blob);
         objectUrls.push(objectUrl);
+
+        const [minLat, minLng, maxLat, maxLng] = boundsHeader
+          .split(",")
+          .map(Number);
+        const bounds = { minLat, minLng, maxLat, maxLng };
 
         const img = document.createElement("img");
         img.alt = "";
@@ -839,12 +982,12 @@
 
         const div = document.createElement("div");
         div.appendChild(img);
-        if (coord || attribution) {
+        if (pageCoord || attribution) {
           const footer = document.createElement("div");
           footer.className = "tile-footer";
-          if (coord) {
+          if (pageCoord) {
             const coordEl = document.createElement("span");
-            coordEl.textContent = coord;
+            coordEl.textContent = pageCoord;
             coordEl.className = "tile-coord";
             footer.appendChild(coordEl);
           }
@@ -856,40 +999,132 @@
           }
           div.appendChild(footer);
         }
-        return div;
+        return { div, objectUrl, bounds, attribution, page };
       }
 
-      async function fetchPages(url) {
-        const response = await fetch(url);
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(
-            body.error || `Pages request failed: ${response.status}`,
-          );
-        }
-        const { pages } = await response.json();
-        return pages.map((tile) => ({
-          src: tile.url,
-          coord: `(${tile.col},${tile.row})`,
-        }));
+      function makePlaceholderTile(tile) {
+        const cssW = tile.size.width + "px";
+        const cssH = tile.size.height + "px";
+
+        const placeholder = document.createElement("div");
+        placeholder.className = "page-placeholder";
+        placeholder.style.width = cssW;
+        placeholder.style.height = cssH;
+
+        const label = document.createElement("span");
+        label.className = "page-placeholder-label";
+        label.innerHTML = `(${tile.col},${tile.row})<br>Not rendered (preview limit)`;
+        placeholder.appendChild(label);
+
+        const div = document.createElement("div");
+        div.appendChild(placeholder);
+        return div;
       }
 
       async function loadPreview() {
         try {
           const url = buildMapUrl();
           errorBox.textContent = "";
-          const tiles = pagesModeCheckbox.checked
-            ? await fetchPages(url)
-            : [{ src: url, coord: null }];
           resetPreview();
-          const divs = await Promise.all(
-            tiles.map((t) => renderTile(t.src, t.coord)),
-          );
-          for (const div of divs) previewGrid.appendChild(div);
-          previewSection.classList.remove("dirty");
+
+          if (pagesModeCheckbox.checked) {
+            const pages = await resolvePages(url);
+            const visible = pages.slice(0, PAGES_PREVIEW_LIMIT);
+            const hidden = pages.slice(PAGES_PREVIEW_LIMIT);
+
+            const fetched = await Promise.all(
+              visible.map((t) => fetchMapImage(t.url, t)),
+            );
+            for (const { div } of fetched) previewGrid.appendChild(div);
+            for (const tile of hidden)
+              previewGrid.appendChild(makePlaceholderTile(tile));
+
+            previewPanel.classList.remove("dirty");
+            mapPages = [
+              ...fetched.map((r) => ({ ...r.page, fetched: r })),
+              ...hidden,
+            ];
+          } else {
+            const result = await fetchMapImage(url, null);
+            previewGrid.appendChild(result.div);
+            previewPanel.classList.remove("dirty");
+            mapPages = [{ fetched: result }];
+          }
+
+          if (activeTab === "map") syncMap();
         } catch (e) {
-          errorBox.textContent = e.message || "Invalid input.";
+          if (e instanceof UserError) {
+            errorBox.textContent = e.message;
+          } else {
+            throw e;
+          }
         }
+      }
+
+      // map
+
+      let leafletMap = null;
+      let mapOverlay = null;
+      const mapAttribution = document.getElementById("map-attribution");
+
+      function clearMapOverlay() {
+        if (mapOverlay) {
+          mapOverlay.remove();
+          mapOverlay = null;
+        }
+      }
+
+      function syncMap() {
+        if (mapPages.length === 0) return;
+
+        if (!leafletMap) {
+          leafletMap = L.map(mapContainer);
+          L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+          }).addTo(leafletMap);
+        }
+
+        clearMapOverlay();
+        mapAttribution.innerHTML = mapPages[0]?.fetched?.attribution ?? "";
+
+        const group = L.layerGroup();
+        for (const entry of mapPages) {
+          const bounds = entry.fetched?.bounds ?? entry.bounds;
+          const leafletBounds = [
+            [bounds.minLat, bounds.minLng],
+            [bounds.maxLat, bounds.maxLng],
+          ];
+          if (entry.fetched) {
+            L.imageOverlay(entry.fetched.objectUrl, leafletBounds, {
+              opacity: 0.6,
+            }).addTo(group);
+          }
+          if (entry.col !== undefined) {
+            const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+            const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+            L.marker([centerLat, centerLng], {
+              icon: L.divIcon({
+                className: "",
+                html: `<span class="map-page-label">(${entry.col},${entry.row})</span>`,
+                iconAnchor: [0, 0],
+              }),
+              interactive: false,
+            }).addTo(group);
+          }
+        }
+        group.addTo(leafletMap);
+        mapOverlay = group;
+
+        const allBounds = mapPages.map((entry) => {
+          const b = entry.fetched?.bounds ?? entry.bounds;
+          return [
+            [b.minLat, b.minLng],
+            [b.maxLat, b.maxLng],
+          ];
+        });
+        leafletMap.fitBounds(allBounds.flat());
       }
 
       // event wiring

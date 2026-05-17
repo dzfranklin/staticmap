@@ -229,7 +229,7 @@ describe("renderStaticMap", () => {
 
   for (const testCase of cases) {
     it(`renders ${testCase.name}`, async () => {
-      const buffer = await renderStaticMap(testCase.options);
+      const { buffer } = await renderStaticMap(testCase.options);
       assertVisualSnapshot(testCase.name, buffer);
     });
   }
