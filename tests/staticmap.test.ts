@@ -357,9 +357,18 @@ function writeSnapshotFailureArtifacts(r: SnapshotResult): void {
   const diffPath = path.join(failureArtifactDir, `${r.name}.diff.png`);
 
   fs.mkdirSync(failureArtifactDir, { recursive: true });
-  if (r.expected) fs.writeFileSync(expectedPath, PNG.sync.write(r.expected));
-  if (r.actual) fs.writeFileSync(actualPath, PNG.sync.write(r.actual));
-  if (r.diff) fs.writeFileSync(diffPath, PNG.sync.write(r.diff));
+  if (r.expected) {
+    fs.writeFileSync(expectedPath, PNG.sync.write(r.expected));
+    console.warn(`[${r.name}] Wrote expected image to ${expectedPath}`);
+  }
+  if (r.actual) {
+    fs.writeFileSync(actualPath, PNG.sync.write(r.actual));
+    console.warn(`[${r.name}] Wrote actual image to ${actualPath}`);
+  }
+  if (r.diff) {
+    fs.writeFileSync(diffPath, PNG.sync.write(r.diff));
+    console.warn(`[${r.name}] Wrote diff image to ${diffPath}`);
+  }
 }
 
 function writeSnapshot(name: string, buffer: Buffer): void {
