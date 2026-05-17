@@ -40,25 +40,67 @@
       }
 
       header {
-        padding: 32px 24px 12px;
-        max-width: 1100px;
-        margin: 0 auto;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .header-row1 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
       }
 
       h1 {
         margin: 0;
-        font-size: 34px;
+        font-size: 22px;
         letter-spacing: -0.02em;
       }
 
       p {
-        margin: 8px 0 0;
+        margin: 2px 0 0;
+        font-size: 12px;
         color: var(--muted);
+
+        a {
+          color: var(--muted);
+        }
+      }
+
+      .header-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .header-url {
+        padding: 8px 12px;
+        background: #f4f1ea;
+        border-radius: 8px;
+        font-size: 12px;
+        word-break: break-all;
+        color: #3c3c3c;
+        cursor: text;
+        user-select: all;
+      }
+
+      .header-error {
+        color: #c0392b;
+        font-weight: 600;
+        font-size: 13px;
       }
 
       main {
         max-width: 1100px;
-        margin: 0 auto 48px;
+        margin: 24px auto 48px;
         padding: 0 24px;
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -185,16 +227,6 @@
         flex-wrap: wrap;
       }
 
-      .url-box {
-        margin-top: 16px;
-        padding: 12px 14px;
-        background: #f4f1ea;
-        border-radius: 10px;
-        font-size: 13px;
-        word-break: break-all;
-        color: #3c3c3c;
-      }
-
       .preview {
         display: grid;
         gap: 16px;
@@ -205,10 +237,9 @@
         display: block;
       }
 
-      .attribution {
-        font-size: 11px;
-        color: var(--muted);
-        margin-top: 6px;
+      .preview.dirty #preview-grid {
+        opacity: 0.4;
+        transition: opacity 0.2s ease;
       }
 
       .pages-grid {
@@ -220,10 +251,98 @@
         display: block;
       }
 
-      .error {
-        color: #c0392b;
+      .row.narrow {
+        grid-template-columns: 160px;
+      }
+
+      .pages-mode-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--ink);
+        margin: 0;
+      }
+
+      .pages-mode-checkbox {
+        width: auto;
+        border: none;
+        padding: 0;
+        background: none;
+      }
+
+      .pill-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .geojsonio-link {
+        font-size: 12px;
         font-weight: 600;
-        margin-top: 12px;
+        color: var(--muted);
+      }
+
+      .geo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .geo-header > label {
+        margin: 0;
+      }
+
+      .precision-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .precision-wrap label {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+      }
+
+      .precision-input {
+        width: 56px;
+        padding: 4px 8px;
+        font-size: 13px;
+      }
+
+      .simplify-input {
+        width: 72px;
+        padding: 4px 8px;
+        font-size: 13px;
+      }
+
+      .tile-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .tile-coord {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .tile-attribution {
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+
+      .tile-attribution a {
+        color: var(--muted);
       }
 
       @media (max-width: 900px) {
@@ -234,25 +353,50 @@
     </style>
   </head>
   <body>
-    <header>
-      <h1>Staticmap Playground</h1>
-      <p>
-        Paste GeoJSON, stack command segments, and preview static map output.
-      </p>
-    </header>
-    <main>
-      <section class="panel">
-        <h2>Inputs</h2>
-        <div class="row">
+    <form id="state-form">
+      <header>
+        <input type="hidden" name="itemCount" id="item-count" value="0" />
+        <div class="header-row1">
           <div>
-            <label for="source">Source Key</label>
-            <input id="source" value="osm" />
+            <h1>Staticmap Playground</h1>
+            <p>
+              <a href="https://github.com/dzfranklin/staticmap"
+                >github.com/dzfranklin/staticmap</a
+              >
+            </p>
           </div>
+          <div class="header-buttons">
+            <button id="preview" type="button">Preview</button>
+            <button id="reset" class="secondary" type="button">Reset</button>
+            <label class="pages-mode-label">
+              <input
+                type="checkbox"
+                id="pages-mode"
+                name="pages"
+                value="1"
+                class="pages-mode-checkbox"
+              />
+              Pages mode
+            </label>
+            <span id="error" class="header-error"></span>
+          </div>
+        </div>
+        <span id="url" class="header-url"></span>
+      </header>
+      <main>
+        <section class="panel">
+          <h2>Inputs</h2>
           <div>
-            <label>Command Items</label>
+            <div class="row narrow">
+              <div>
+                <label for="source">Source Key</label>
+                <input id="source" name="source" value="osm" />
+              </div>
+            </div>
+            <div class="list" id="command-list"></div>
             <div class="actions">
               <button id="add-text" class="secondary small" type="button">
-                Add text command
+                Add command
               </button>
               <button id="add-geojson" class="secondary small" type="button">
                 Add line
@@ -262,75 +406,35 @@
               </button>
             </div>
           </div>
-        </div>
-        <div class="list" id="command-list"></div>
-        <div class="actions">
-          <button id="preview">Preview</button>
-          <button id="copy" class="secondary">Copy URL</button>
-          <label
-            style="
-              display: inline-flex;
-              align-items: center;
-              gap: 6px;
-              font-size: 14px;
-              text-transform: none;
-              letter-spacing: 0;
-              color: var(--ink);
-              margin: 0;
-            "
-          >
-            <input
-              type="checkbox"
-              id="pages-mode"
-              style="width: auto; border: none; padding: 0; background: none"
-            />
-            Pages
-          </label>
-        </div>
-        <div id="url" class="url-box"></div>
-        <div id="error" class="error"></div>
-      </section>
-      <section class="panel preview">
-        <h2>Preview</h2>
-        <div id="single-preview">
-          <div class="image-wrap">
-            <img id="image" alt="Rendered map preview" />
-          </div>
-          <div id="attribution" class="attribution"></div>
-        </div>
-        <div id="pages-preview" style="display: none">
-          <div id="pages-grid" class="pages-grid"></div>
-        </div>
-      </section>
-    </main>
+        </section>
+        <section class="panel preview">
+          <h2>Preview</h2>
+          <div id="preview-grid" class="pages-grid"></div>
+        </section>
+      </main>
+    </form>
     <script>
-      const sourceInput = document.getElementById("source");
+      const form = document.getElementById("state-form");
+      const itemCountInput = document.getElementById("item-count");
       const commandList = document.getElementById("command-list");
       const urlBox = document.getElementById("url");
       const errorBox = document.getElementById("error");
-      const image = document.getElementById("image");
-      const attributionBox = document.getElementById("attribution");
       const previewButton = document.getElementById("preview");
-      const copyButton = document.getElementById("copy");
       const addTextButton = document.getElementById("add-text");
       const addGeoButton = document.getElementById("add-geojson");
       const addPointButton = document.getElementById("add-point");
       const pagesModeCheckbox = document.getElementById("pages-mode");
-      const singlePreview = document.getElementById("single-preview");
-      const pagesPreview = document.getElementById("pages-preview");
-      const pagesGrid = document.getElementById("pages-grid");
+      const previewSection = document.querySelector("section.preview");
+      const previewGrid = document.getElementById("preview-grid");
 
-      const items = [];
       const defaultTextCommand =
         "size:600x300/padding:16/color:#0000ff/width:10/border:#ffffff/borderWidth:6";
-      const defaultGeoJson = `{
-      "type": "Feature",
-      "properties": {},
-      "geometry": {
-        "coordinates": [ [ -3.7433013435256157, 57.135747155226284 ], [ -3.7428251624946256, 57.13553009869429 ], [ -3.742377552324996, 57.13515283074193 ], [ -3.7421775562913524, 57.1347910633404 ], [ -3.742139461808705, 57.13463085093284 ], [ -3.7420251783615583, 57.1345274877215 ], [ -3.7420251783615583, 57.13440345148638 ], [ -3.741891847672747, 57.134315592235595 ], [ -3.741844229568869, 57.13419672350514 ], [ -3.741548997329801, 57.133995162611285 ], [ -3.7414251902614524, 57.133762590986066 ], [ -3.74131090681351, 57.13372124476621 ], [ -3.7409680564713312, 57.133338790044434 ], [ -3.740006170787325, 57.132635889981714 ], [ -3.738265068930218, 57.13165230872292 ], [ -3.7369984273858563, 57.13088218390206 ], [ -3.7360328738209603, 57.13046978611055 ], [ -3.735385267617687, 57.13032506126754 ], [ -3.734699566932619, 57.12993223384194 ], [ -3.7338152022292377, 57.12940505467637 ], [ -3.733053312578818, 57.128603869152585 ], [ -3.7325866551675517, 57.12789571009492 ], [ -3.7320819032743486, 57.12762174711773 ], [ -3.7320533324121925, 57.12748734944478 ], [ -3.7308416986584234, 57.12677916337299 ], [ -3.7300226672844587, 57.12631909730743 ], [ -3.7297741829084714, 57.12599871056881 ], [ -3.7291391443701514, 57.125860832419846 ], [ -3.727763227537366, 57.12499908235725 ] ],
-        "type": "LineString"
-      }
-    }`;
+      const defaultLine =
+        '{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-3.7433,57.13575],[-3.74283,57.13553],[-3.74238,57.13515],[-3.74218,57.13479],[-3.74214,57.13463],[-3.74203,57.13453],[-3.74203,57.1344],[-3.74189,57.13432],[-3.74184,57.1342],[-3.74155,57.134],[-3.74143,57.13376],[-3.74131,57.13372],[-3.74097,57.13334],[-3.74001,57.13264],[-3.73827,57.13165],[-3.737,57.13088],[-3.73603,57.13047],[-3.73539,57.13033],[-3.73382,57.12941],[-3.73305,57.1286],[-3.73259,57.1279],[-3.73208,57.12762],[-3.73205,57.12749],[-3.73002,57.12632],[-3.72977,57.126],[-3.72914,57.12586],[-3.72776,57.125]]}}';
+      const defaultPoint =
+        '{"type":"Feature","properties":{},"geometry":{"coordinates":[-3.73539,57.13033],"type":"Point"}}';
+
+      // polyline encoding
 
       function encodePolyline(coords, precision) {
         let lastLat = 0;
@@ -368,297 +472,322 @@
         return encoded;
       }
 
-      function extractLines(geojson) {
+      // Returns an array of URL path segment strings, e.g. "point:1,2" or "line:encoded"
+      function geojsonToCommands(geojson, precision) {
         if (!geojson) return [];
 
-        // Raw coordinate array: [[lng, lat], ...]
-        if (
-          Array.isArray(geojson) &&
-          geojson.length > 0 &&
-          Array.isArray(geojson[0])
-        ) {
-          return [geojson];
+        if (Array.isArray(geojson) && Array.isArray(geojson[0])) {
+          const encoded = encodePolyline(geojson, precision);
+          const prefix = precision !== 5 ? `${precision}:` : "";
+          return [`line:${prefix}${encodeURIComponent(encoded)}`];
         }
 
         if (!geojson.type) return [];
 
+        if (geojson.type === "Point") {
+          const [lng, lat] = geojson.coordinates;
+          const factor = Math.pow(10, precision);
+          const rLng = Math.round(lng * factor) / factor;
+          const rLat = Math.round(lat * factor) / factor;
+          return [`point:${rLng},${rLat}`];
+        }
+
         if (geojson.type === "LineString") {
-          return [geojson.coordinates];
+          const encoded = encodePolyline(geojson.coordinates, precision);
+          const prefix = precision !== 5 ? `${precision}:` : "";
+          return [`line:${prefix}${encodeURIComponent(encoded)}`];
         }
 
         if (geojson.type === "MultiLineString") {
-          return geojson.coordinates || [];
+          return (geojson.coordinates ?? []).map((coords) => {
+            const encoded = encodePolyline(coords, precision);
+            const prefix = precision !== 5 ? `${precision}:` : "";
+            return `line:${prefix}${encodeURIComponent(encoded)}`;
+          });
         }
 
         if (geojson.type === "Feature") {
-          return extractLines(geojson.geometry || {});
+          return geojsonToCommands(geojson.geometry, precision);
         }
 
         if (geojson.type === "FeatureCollection") {
-          return geojson.features.flatMap((feature) =>
-            extractLines(feature.geometry || {}),
+          return geojson.features.flatMap((f) =>
+            geojsonToCommands(f, precision),
           );
         }
 
         return [];
       }
 
-      function renderItems() {
-        commandList.innerHTML = "";
+      // item DOM helpers
 
-        items.forEach((item, index) => {
-          const wrapper = document.createElement("div");
-          wrapper.className = "list-item";
+      function itemNodes() {
+        return Array.from(commandList.children);
+      }
 
-          const header = document.createElement("div");
-          header.className = "list-header";
-
-          const pill = document.createElement("span");
-          pill.className = "pill";
-          pill.textContent =
-            item.type === "text"
-              ? "Text commands"
-              : item.type === "point"
-                ? "Point"
-                : "Line";
-
-          const actions = document.createElement("div");
-          actions.className = "item-actions";
-
-          const removeButton = document.createElement("button");
-          removeButton.className = "secondary small";
-          removeButton.type = "button";
-          removeButton.textContent = "Remove";
-          removeButton.addEventListener("click", () => {
-            items.splice(index, 1);
-            renderItems();
-            updateUrl();
-          });
-
-          actions.appendChild(removeButton);
-          header.appendChild(pill);
-          header.appendChild(actions);
-          wrapper.appendChild(header);
-
-          if (item.type === "text") {
-            const input = document.createElement("input");
-            input.value = item.value;
-            input.placeholder = "color:#ffffff/width:6";
-            input.addEventListener("input", (event) => {
-              item.value = event.target.value;
-            });
-            wrapper.appendChild(input);
-          } else if (item.type === "point") {
-            const grid = document.createElement("div");
-            grid.style.cssText =
-              "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px";
-
-            function makePointField(labelText, placeholder, getValue, setValue) {
-              const wrap = document.createElement("div");
-              const lbl = document.createElement("label");
-              lbl.textContent = labelText;
-              lbl.style.cssText =
-                "display:block;text-transform:uppercase;letter-spacing:0.08em;font-size:11px;color:var(--muted);margin-bottom:4px";
-              const inp = document.createElement("input");
-              inp.value = getValue();
-              inp.placeholder = placeholder;
-              inp.style.cssText = "padding:6px 10px;font-size:13px";
-              inp.addEventListener("input", (e) => {
-                setValue(e.target.value);
-                updateUrl();
-              });
-              wrap.appendChild(lbl);
-              wrap.appendChild(inp);
-              return wrap;
-            }
-
-            grid.appendChild(
-              makePointField(
-                "Lng",
-                "-122.4",
-                () => item.lng,
-                (v) => (item.lng = v),
-              ),
-            );
-            grid.appendChild(
-              makePointField(
-                "Lat",
-                "37.77",
-                () => item.lat,
-                (v) => (item.lat = v),
-              ),
-            );
-            grid.appendChild(
-              makePointField(
-                "Label",
-                "A",
-                () => item.label,
-                (v) => (item.label = v),
-              ),
-            );
-            wrapper.appendChild(grid);
+      function readItems() {
+        return itemNodes().map((node) => {
+          const f = (name) =>
+            node.querySelector(`[data-field="${name}"]`)?.value ?? "";
+          const type = node.dataset.type;
+          if (type === "text") {
+            return { type, value: f("value") };
           } else {
-            const geoHeader = document.createElement("div");
-            geoHeader.style.cssText =
-              "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px";
-
-            const label = document.createElement("label");
-            label.textContent = "GeoJSON";
-            label.style.margin = "0";
-            geoHeader.appendChild(label);
-
-            const precisionWrap = document.createElement("div");
-            precisionWrap.style.cssText =
-              "display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)";
-
-            const precisionLabel = document.createElement("label");
-            precisionLabel.textContent = "Precision";
-            precisionLabel.style.cssText =
-              "margin:0;text-transform:uppercase;letter-spacing:0.08em;font-size:11px";
-
-            const precisionInput = document.createElement("input");
-            precisionInput.type = "number";
-            precisionInput.min = "1";
-            precisionInput.max = "8";
-            precisionInput.step = "1";
-            precisionInput.value = item.precision ?? 5;
-            precisionInput.style.cssText =
-              "width:56px;padding:4px 8px;font-size:13px";
-            precisionInput.addEventListener("input", (event) => {
-              const v = parseInt(event.target.value, 10);
-              if (Number.isFinite(v) && v >= 1 && v <= 8) {
-                item.precision = v;
-              }
-            });
-
-            precisionWrap.appendChild(precisionLabel);
-            precisionWrap.appendChild(precisionInput);
-
-            const simplifyLabel = document.createElement("label");
-            simplifyLabel.textContent = "Simplify";
-            simplifyLabel.style.cssText =
-              "margin:0;text-transform:uppercase;letter-spacing:0.08em;font-size:11px";
-
-            const simplifyInput = document.createElement("input");
-            simplifyInput.type = "number";
-            simplifyInput.min = "0";
-            simplifyInput.step = "any";
-            simplifyInput.placeholder = "off";
-            simplifyInput.value = item.tolerance ?? "";
-            simplifyInput.style.cssText =
-              "width:72px;padding:4px 8px;font-size:13px";
-            simplifyInput.addEventListener("input", (event) => {
-              const v = parseFloat(event.target.value);
-              item.tolerance = Number.isFinite(v) && v > 0 ? v : null;
-            });
-
-            precisionWrap.appendChild(simplifyLabel);
-            precisionWrap.appendChild(simplifyInput);
-            geoHeader.appendChild(precisionWrap);
-            wrapper.appendChild(geoHeader);
-
-            const textarea = document.createElement("textarea");
-            textarea.spellcheck = false;
-            textarea.value = item.value;
-            textarea.placeholder = '{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-122.5,37.7],[-122.4,37.8]]},"properties":{}}';
-            textarea.addEventListener("input", (event) => {
-              item.value = event.target.value;
-            });
-            wrapper.appendChild(textarea);
+            const precision = parseInt(f("precision"), 10);
+            const toleranceRaw = parseFloat(f("tolerance"));
+            return {
+              type,
+              value: f("value"),
+              precision: Number.isFinite(precision) ? precision : 5,
+              tolerance:
+                Number.isFinite(toleranceRaw) && toleranceRaw > 0
+                  ? toleranceRaw
+                  : null,
+            };
           }
-
-          commandList.appendChild(wrapper);
         });
       }
 
-      function addTextCommand(value) {
-        items.push({ type: "text", value });
-        renderItems();
-        updateUrl();
+      function setItemNames(node, index) {
+        node.querySelectorAll("[data-field]").forEach((el) => {
+          el.name = `item${index}_${el.dataset.field}`;
+        });
+        // the hidden type input uses data-field="type"
       }
 
-      function addGeoJson(value) {
-        items.push({ type: "geojson", value, precision: 5, tolerance: null });
-        renderItems();
-        updateUrl();
+      function removeItem(node) {
+        node.remove();
+        itemNodes().forEach((n, i) => setItemNames(n, i));
+        itemCountInput.value = itemNodes().length;
+        update();
       }
 
-      function addPoint() {
-        items.push({ type: "point", lng: "", lat: "", label: "" });
-        renderItems();
-        updateUrl();
-      }
+      function buildItemNode(type, defaults = {}) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "list-item";
+        wrapper.dataset.type = type;
 
-      function buildUrl() {
-        errorBox.textContent = "";
+        const header = document.createElement("div");
+        header.className = "list-header";
 
-        const source = sourceInput.value.trim();
-        if (!source) {
-          throw new Error("Source key is required.");
+        const pillGroup = document.createElement("div");
+        pillGroup.className = "pill-group";
+
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = type === "text" ? "Commands" : "GeoJSON";
+        pillGroup.appendChild(pill);
+
+        if (type === "geojson") {
+          const link = document.createElement("a");
+          link.textContent = "geojson.io";
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.dataset.geojsonio = "";
+          link.className = "geojsonio-link";
+          pillGroup.appendChild(link);
         }
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "secondary small";
+        removeButton.type = "button";
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", () => removeItem(wrapper));
+
+        actions.appendChild(removeButton);
+        header.appendChild(pillGroup);
+        header.appendChild(actions);
+        wrapper.appendChild(header);
+
+        const typeInput = document.createElement("input");
+        typeInput.type = "hidden";
+        typeInput.dataset.field = "type";
+        typeInput.value = type;
+        wrapper.appendChild(typeInput);
+
+        if (type === "text") {
+          const input = document.createElement("input");
+          input.dataset.field = "value";
+          input.value = defaults.value ?? "";
+          input.placeholder = "color:#ffffff/width:6";
+          wrapper.appendChild(input);
+        } else {
+          const geoHeader = document.createElement("div");
+          geoHeader.className = "geo-header";
+
+          const geoLabel = document.createElement("label");
+          geoLabel.textContent = "GeoJSON";
+          geoHeader.appendChild(geoLabel);
+
+          const precisionWrap = document.createElement("div");
+          precisionWrap.className = "precision-wrap";
+
+          const precisionLabel = document.createElement("label");
+          precisionLabel.textContent = "Precision";
+
+          const precisionInput = document.createElement("input");
+          precisionInput.type = "number";
+          precisionInput.min = "1";
+          precisionInput.max = "8";
+          precisionInput.step = "1";
+          precisionInput.dataset.field = "precision";
+          precisionInput.value = defaults.precision ?? 5;
+          precisionInput.className = "precision-input";
+
+          precisionWrap.appendChild(precisionLabel);
+          precisionWrap.appendChild(precisionInput);
+
+          const simplifyLabel = document.createElement("label");
+          simplifyLabel.textContent = "Simplify lines (digits)";
+
+          const simplifyInput = document.createElement("input");
+          simplifyInput.type = "number";
+          simplifyInput.min = "0";
+          simplifyInput.step = "1";
+          simplifyInput.placeholder = "off";
+          simplifyInput.dataset.field = "tolerance";
+          simplifyInput.value = defaults.tolerance ?? "";
+          simplifyInput.className = "simplify-input";
+
+          precisionWrap.appendChild(simplifyLabel);
+          precisionWrap.appendChild(simplifyInput);
+          geoHeader.appendChild(precisionWrap);
+          wrapper.appendChild(geoHeader);
+
+          const textarea = document.createElement("textarea");
+          textarea.spellcheck = false;
+          textarea.dataset.field = "value";
+          textarea.value = defaults.value ?? "";
+          textarea.placeholder =
+            '{"type":"Feature","geometry":{"type":"Point","coordinates":[-122.4,37.77]},"properties":{"label":"A"}}';
+          wrapper.appendChild(textarea);
+        }
+
+        return wrapper;
+      }
+
+      function appendItem(type, defaults = {}) {
+        const node = buildItemNode(type, defaults);
+        commandList.appendChild(node);
+        const index = itemNodes().length - 1;
+        setItemNames(node, index);
+        itemCountInput.value = itemNodes().length;
+        refresh();
+      }
+
+      // hash state
+
+      function refresh() {
+        updateUrlBox();
+        updateGeoJsonIoLinks();
+      }
+
+      function update() {
+        const params = new URLSearchParams(new FormData(form));
+        history.replaceState(null, "", "#" + params.toString());
+        previewSection.classList.add("dirty");
+        refresh();
+      }
+
+      function updateGeoJsonIoLinks() {
+        for (const node of itemNodes()) {
+          if (node.dataset.type !== "geojson") continue;
+          const link = node.querySelector("a[data-geojsonio]");
+          const raw = node.querySelector('[data-field="value"]')?.value.trim();
+          link.href = raw
+            ? "http://geojson.io/#data=data:application/json," +
+              encodeURIComponent(raw)
+            : "http://geojson.io/";
+        }
+      }
+
+      function loadFromHash() {
+        const hash = location.hash.slice(1);
+        if (!hash) return false;
+
+        const params = new URLSearchParams(hash);
+        const source = params.get("source");
+        if (source !== null) {
+          document.getElementById("source").value = source;
+        }
+
+        pagesModeCheckbox.checked = params.get("pages") === "1";
+
+        const count = parseInt(params.get("itemCount") ?? "0", 10);
+        commandList.innerHTML = "";
+        itemCountInput.value = 0;
+        for (let i = 0; i < count; i++) {
+          const type = params.get(`item${i}_type`);
+          if (type === "text") {
+            appendItem("text", { value: params.get(`item${i}_value`) ?? "" });
+          } else if (type === "geojson") {
+            const precision = parseInt(
+              params.get(`item${i}_precision`) ?? "5",
+              10,
+            );
+            const toleranceRaw = parseFloat(
+              params.get(`item${i}_tolerance`) ?? "",
+            );
+            appendItem("geojson", {
+              value: params.get(`item${i}_value`) ?? "",
+              precision: Number.isFinite(precision) ? precision : 5,
+              tolerance:
+                Number.isFinite(toleranceRaw) && toleranceRaw > 0
+                  ? toleranceRaw
+                  : null,
+            });
+          }
+        }
+
+        return count > 0 || source !== null;
+      }
+
+      // map URL builder
+
+      function buildMapUrl() {
+        const source = document.getElementById("source").value.trim();
+        if (!source) throw new Error("Source key is required.");
 
         const segments = [`map:${source}`];
 
-        if (items.length === 0) {
+        const items = readItems();
+        if (items.length === 0)
           throw new Error("Add at least one command item.");
-        }
 
         for (const item of items) {
           if (item.type === "text") {
             const value = item.value.trim();
-            if (!value) {
-              continue;
-            }
+            if (!value) continue;
             segments.push(
               ...value
                 .replace(/\#/g, "%23")
                 .split("/")
-                .map((part) => part.trim())
+                .map((p) => p.trim())
                 .filter(Boolean),
             );
-          } else if (item.type === "point") {
-            const lng = parseFloat(item.lng);
-            const lat = parseFloat(item.lat);
-            if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-              throw new Error("Point requires valid lng and lat.");
-            }
-            if (item.label && item.label.trim()) {
-              segments.push(`label:${encodeURIComponent(item.label.trim())}`);
-            }
-            segments.push(`point:${lng},${lat}`);
           } else {
             const geojsonRaw = item.value.trim();
-            if (!geojsonRaw) {
-              throw new Error("GeoJSON item cannot be empty.");
-            }
+            if (!geojsonRaw) throw new Error("GeoJSON item cannot be empty.");
 
             let geojson;
             try {
               geojson = JSON.parse(geojsonRaw);
-            } catch (error) {
+            } catch {
               throw new Error("GeoJSON must be valid JSON.");
             }
 
             if (item.tolerance) {
               geojson = turf.simplify(geojson, {
-                tolerance: item.tolerance,
+                tolerance: Math.pow(10, -item.tolerance),
                 highQuality: false,
               });
             }
 
-            const lines = extractLines(geojson);
-            if (lines.length === 0) {
-              throw new Error("GeoJSON must include a LineString.");
-            }
-
             const precision = item.precision ?? 5;
-            for (const coords of lines) {
-              const encoded = encodePolyline(coords, precision);
-              const precisionPrefix = precision !== 5 ? `${precision}:` : "";
-              segments.push(
-                `line:${precisionPrefix}${encodeURIComponent(encoded)}`,
-              );
-            }
+            segments.push(...geojsonToCommands(geojson, precision));
           }
         }
 
@@ -666,31 +795,72 @@
         return pagesModeCheckbox.checked ? `/pages${mapPath}` : mapPath;
       }
 
-      let currentObjectUrl = null;
+      function updateUrlBox() {
+        try {
+          urlBox.textContent = buildMapUrl();
+          errorBox.textContent = "";
+        } catch (e) {
+          urlBox.textContent = "";
+          errorBox.textContent = e.message || "Invalid input.";
+        }
+      }
 
-      async function loadPreview(url) {
-        image.src = "";
+      // preview
 
-        const response = await fetch(url);
+      const objectUrls = [];
+
+      function resetPreview() {
+        previewGrid.innerHTML = "";
+        for (const u of objectUrls) URL.revokeObjectURL(u);
+        objectUrls.length = 0;
+      }
+
+      async function renderTile(src, coord) {
+        const response = await fetch(src);
         const blob = await response.blob();
         const attribution = response.headers.get("X-Map-Attribution");
 
-        if (currentObjectUrl) {
-          URL.revokeObjectURL(currentObjectUrl);
-        }
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
 
-        currentObjectUrl = URL.createObjectURL(blob);
-        image.onload = () => {
-          image.style.width = image.naturalWidth / 2 + "px";
-          image.style.height = image.naturalHeight / 2 + "px";
+        const img = document.createElement("img");
+        img.alt = "";
+        img.onload = () => {
+          const w = img.naturalWidth / 2 + "px";
+          img.style.width = w;
+          img.style.height = img.naturalHeight / 2 + "px";
+          div.style.width = w;
         };
-        image.src = currentObjectUrl;
+        img.addEventListener("dragstart", (e) => {
+          // Use actual tile so that I can drag it at actual size to see how it aligns with other tiles
+          e.dataTransfer.setDragImage(img, 0, 0);
+        });
+        img.src = objectUrl;
 
-        attributionBox.innerHTML = attribution ?? "";
+        const div = document.createElement("div");
+        div.appendChild(img);
+        if (coord || attribution) {
+          const footer = document.createElement("div");
+          footer.className = "tile-footer";
+          if (coord) {
+            const coordEl = document.createElement("span");
+            coordEl.textContent = coord;
+            coordEl.className = "tile-coord";
+            footer.appendChild(coordEl);
+          }
+          if (attribution) {
+            const attrEl = document.createElement("span");
+            attrEl.innerHTML = attribution;
+            attrEl.className = "tile-attribution";
+            footer.appendChild(attrEl);
+          }
+          div.appendChild(footer);
+        }
+        return div;
       }
 
-      async function loadPagesPreview(mapPath) {
-        const response = await fetch(mapPath);
+      async function fetchPages(url) {
+        const response = await fetch(url);
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
           throw new Error(
@@ -698,79 +868,59 @@
           );
         }
         const { pages } = await response.json();
-
-        pagesGrid.style.gridTemplateColumns = "auto";
-        pagesGrid.innerHTML = "";
-
-        for (const tile of pages) {
-          const img = document.createElement("img");
-          img.alt = `Page row ${tile.row} col ${tile.col}`;
-          img.onload = () => {
-            img.style.width = img.naturalWidth / 2 + "px";
-            img.style.height = img.naturalHeight / 2 + "px";
-          };
-          img.src = tile.url;
-          pagesGrid.appendChild(img);
-        }
+        return pages.map((tile) => ({
+          src: tile.url,
+          coord: `(${tile.col},${tile.row})`,
+        }));
       }
 
-      function updateUrl() {
+      async function loadPreview() {
         try {
-          const url = buildUrl();
-          urlBox.textContent = url;
+          const url = buildMapUrl();
           errorBox.textContent = "";
-        } catch (error) {
-          urlBox.textContent = "";
-          errorBox.textContent = error.message || "Invalid input.";
+          const tiles = pagesModeCheckbox.checked
+            ? await fetchPages(url)
+            : [{ src: url, coord: null }];
+          resetPreview();
+          const divs = await Promise.all(
+            tiles.map((t) => renderTile(t.src, t.coord)),
+          );
+          for (const div of divs) previewGrid.appendChild(div);
+          previewSection.classList.remove("dirty");
+        } catch (e) {
+          errorBox.textContent = e.message || "Invalid input.";
         }
       }
 
-      async function renderImage() {
-        try {
-          const url = buildUrl();
-          urlBox.textContent = url;
-          errorBox.textContent = "";
-          if (pagesModeCheckbox.checked) {
-            singlePreview.style.display = "none";
-            pagesPreview.style.display = "";
-            await loadPagesPreview(url);
-          } else {
-            pagesPreview.style.display = "none";
-            singlePreview.style.display = "";
-            await loadPreview(url);
-          }
-        } catch (error) {
-          errorBox.textContent = error.message || "Invalid input.";
-        }
-      }
+      // event wiring
 
-      previewButton.addEventListener("click", () => renderImage());
-      copyButton.addEventListener("click", async () => {
-        try {
-          const url = buildUrl();
-          await navigator.clipboard.writeText(url);
-          urlBox.textContent = url;
-        } catch (error) {
-          errorBox.textContent = error.message || "Copy failed.";
-        }
+      previewButton.addEventListener("click", () => loadPreview());
+
+      document
+        .getElementById("reset")
+        .addEventListener("click", () => (location.href = location.pathname));
+
+      form.addEventListener("input", () => update());
+
+      addTextButton.addEventListener("click", () => appendItem("text"));
+      addGeoButton.addEventListener("click", () =>
+        appendItem("geojson", { value: defaultLine }),
+      );
+      addPointButton.addEventListener("click", () => {
+        appendItem("text", { value: "label:Point Label" });
+        appendItem("geojson", { value: defaultPoint });
       });
 
-      function onInputChange() {
-        updateUrl();
+      // init
+
+      const restoredFromHash = loadFromHash();
+      if (!restoredFromHash) {
+        appendItem("text", { value: defaultTextCommand });
+        appendItem("geojson", { value: defaultLine });
+        appendItem("text", { value: "label:Midpoint" });
+        appendItem("geojson", { value: defaultPoint });
       }
-
-      sourceInput.addEventListener("input", onInputChange);
-      commandList.addEventListener("input", onInputChange);
-      pagesModeCheckbox.addEventListener("change", onInputChange);
-
-      addTextButton.addEventListener("click", () => addTextCommand(""));
-      addGeoButton.addEventListener("click", () => addGeoJson(""));
-      addPointButton.addEventListener("click", () => addPoint());
-
-      addTextCommand(defaultTextCommand);
-      addGeoJson(defaultGeoJson);
-
-      updateUrl();
+      refresh();
     </script>
   </body>
 </html>
