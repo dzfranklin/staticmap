@@ -255,7 +255,10 @@
                 Add text command
               </button>
               <button id="add-geojson" class="secondary small" type="button">
-                Add GeoJSON
+                Add line
+              </button>
+              <button id="add-point" class="secondary small" type="button">
+                Add point
               </button>
             </div>
           </div>
@@ -311,6 +314,7 @@
       const copyButton = document.getElementById("copy");
       const addTextButton = document.getElementById("add-text");
       const addGeoButton = document.getElementById("add-geojson");
+      const addPointButton = document.getElementById("add-point");
       const pagesModeCheckbox = document.getElementById("pages-mode");
       const singlePreview = document.getElementById("single-preview");
       const pagesPreview = document.getElementById("pages-preview");
@@ -365,9 +369,18 @@
       }
 
       function extractLines(geojson) {
-        if (!geojson || !geojson.type) {
-          return [];
+        if (!geojson) return [];
+
+        // Raw coordinate array: [[lng, lat], ...]
+        if (
+          Array.isArray(geojson) &&
+          geojson.length > 0 &&
+          Array.isArray(geojson[0])
+        ) {
+          return [geojson];
         }
+
+        if (!geojson.type) return [];
 
         if (geojson.type === "LineString") {
           return [geojson.coordinates];
@@ -402,7 +415,12 @@
 
           const pill = document.createElement("span");
           pill.className = "pill";
-          pill.textContent = item.type === "text" ? "Text commands" : "GeoJSON";
+          pill.textContent =
+            item.type === "text"
+              ? "Text commands"
+              : item.type === "point"
+                ? "Point"
+                : "Line";
 
           const actions = document.createElement("div");
           actions.className = "item-actions";
@@ -430,6 +448,55 @@
               item.value = event.target.value;
             });
             wrapper.appendChild(input);
+          } else if (item.type === "point") {
+            const grid = document.createElement("div");
+            grid.style.cssText =
+              "display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px";
+
+            function makePointField(labelText, placeholder, getValue, setValue) {
+              const wrap = document.createElement("div");
+              const lbl = document.createElement("label");
+              lbl.textContent = labelText;
+              lbl.style.cssText =
+                "display:block;text-transform:uppercase;letter-spacing:0.08em;font-size:11px;color:var(--muted);margin-bottom:4px";
+              const inp = document.createElement("input");
+              inp.value = getValue();
+              inp.placeholder = placeholder;
+              inp.style.cssText = "padding:6px 10px;font-size:13px";
+              inp.addEventListener("input", (e) => {
+                setValue(e.target.value);
+                updateUrl();
+              });
+              wrap.appendChild(lbl);
+              wrap.appendChild(inp);
+              return wrap;
+            }
+
+            grid.appendChild(
+              makePointField(
+                "Lng",
+                "-122.4",
+                () => item.lng,
+                (v) => (item.lng = v),
+              ),
+            );
+            grid.appendChild(
+              makePointField(
+                "Lat",
+                "37.77",
+                () => item.lat,
+                (v) => (item.lat = v),
+              ),
+            );
+            grid.appendChild(
+              makePointField(
+                "Label",
+                "A",
+                () => item.label,
+                (v) => (item.label = v),
+              ),
+            );
+            wrapper.appendChild(grid);
           } else {
             const geoHeader = document.createElement("div");
             geoHeader.style.cssText =
@@ -493,8 +560,7 @@
             const textarea = document.createElement("textarea");
             textarea.spellcheck = false;
             textarea.value = item.value;
-            textarea.placeholder =
-              '{"type":"LineString","coordinates":[[-122.5,37.7]]}';
+            textarea.placeholder = '{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-122.5,37.7],[-122.4,37.8]]},"properties":{}}';
             textarea.addEventListener("input", (event) => {
               item.value = event.target.value;
             });
@@ -513,6 +579,12 @@
 
       function addGeoJson(value) {
         items.push({ type: "geojson", value, precision: 5, tolerance: null });
+        renderItems();
+        updateUrl();
+      }
+
+      function addPoint() {
+        items.push({ type: "point", lng: "", lat: "", label: "" });
         renderItems();
         updateUrl();
       }
@@ -544,40 +616,49 @@
                 .map((part) => part.trim())
                 .filter(Boolean),
             );
-            continue;
-          }
+          } else if (item.type === "point") {
+            const lng = parseFloat(item.lng);
+            const lat = parseFloat(item.lat);
+            if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+              throw new Error("Point requires valid lng and lat.");
+            }
+            if (item.label && item.label.trim()) {
+              segments.push(`label:${encodeURIComponent(item.label.trim())}`);
+            }
+            segments.push(`point:${lng},${lat}`);
+          } else {
+            const geojsonRaw = item.value.trim();
+            if (!geojsonRaw) {
+              throw new Error("GeoJSON item cannot be empty.");
+            }
 
-          const geojsonRaw = item.value.trim();
-          if (!geojsonRaw) {
-            throw new Error("GeoJSON item cannot be empty.");
-          }
+            let geojson;
+            try {
+              geojson = JSON.parse(geojsonRaw);
+            } catch (error) {
+              throw new Error("GeoJSON must be valid JSON.");
+            }
 
-          let geojson;
-          try {
-            geojson = JSON.parse(geojsonRaw);
-          } catch (error) {
-            throw new Error("GeoJSON must be valid JSON.");
-          }
+            if (item.tolerance) {
+              geojson = turf.simplify(geojson, {
+                tolerance: item.tolerance,
+                highQuality: false,
+              });
+            }
 
-          if (item.tolerance) {
-            geojson = turf.simplify(geojson, {
-              tolerance: item.tolerance,
-              highQuality: false,
-            });
-          }
+            const lines = extractLines(geojson);
+            if (lines.length === 0) {
+              throw new Error("GeoJSON must include a LineString.");
+            }
 
-          const lines = extractLines(geojson);
-          if (lines.length === 0) {
-            throw new Error("GeoJSON must include a LineString.");
-          }
-
-          const precision = item.precision ?? 5;
-          for (const coords of lines) {
-            const encoded = encodePolyline(coords, precision);
-            const precisionPrefix = precision !== 5 ? `${precision}:` : "";
-            segments.push(
-              `line:${precisionPrefix}${encodeURIComponent(encoded)}`,
-            );
+            const precision = item.precision ?? 5;
+            for (const coords of lines) {
+              const encoded = encodePolyline(coords, precision);
+              const precisionPrefix = precision !== 5 ? `${precision}:` : "";
+              segments.push(
+                `line:${precisionPrefix}${encodeURIComponent(encoded)}`,
+              );
+            }
           }
         }
 
@@ -684,6 +765,7 @@
 
       addTextButton.addEventListener("click", () => addTextCommand(""));
       addGeoButton.addEventListener("click", () => addGeoJson(""));
+      addPointButton.addEventListener("click", () => addPoint());
 
       addTextCommand(defaultTextCommand);
       addGeoJson(defaultGeoJson);
