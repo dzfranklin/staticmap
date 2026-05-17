@@ -118,14 +118,24 @@ describe("label command", () => {
     expect(() => buildOptions(commands, source)).toThrow(HttpError);
   });
 
-  it("round-trips label, labelColor, labelAnchor, and labelOffset", () => {
-    const original = `/map:osm/label:Hello/labelColor:%23ff0000/labelAnchor:top-right/labelOffset:8/point:-1.000000,51.000000`;
+  it("round-trips label, labelColor, labelAnchor, labelOffset, labelHaloWidth, and labelHaloColor", () => {
+    const original = `/map:osm/label:Hello/labelColor:%23ff0000/labelAnchor:top-right/labelOffset:8/labelHaloWidth:2/labelHaloColor:%23ffffff/point:-1.000000,51.000000`;
     const { sourceKey, commands } = parsePath(original);
     const serialized = serializePath(sourceKey, commands);
     const { commands: commands2 } = parsePath(serialized);
     expect(buildOptions(commands, source)).toEqual(
       buildOptions(commands2, source),
     );
+  });
+
+  it("applies labelHaloWidth and labelHaloColor to point style", () => {
+    const { commands } = parsePath(
+      `/map:osm/labelHaloWidth:3/labelHaloColor:%23ffffff/label:X/point:-1,51`,
+    );
+    const options = buildOptions(commands, source);
+    const point = options.features[0]!;
+    expect(point.style.labelHaloWidth).toBe(3);
+    expect(point.style.labelHaloColor).toBe("#ffffff");
   });
 
   it("rejects invalid labelAnchor", () => {
@@ -160,9 +170,14 @@ describe("serializePath", () => {
       `/width:4` +
       `/line:4:${samplePolyline}` +
       `/point:-122.400000,37.770000` +
+      `/labelHaloWidth:2` +
+      `/labelHaloColor:%23ffffff` +
       `/pageOverlap:80`;
     const { sourceKey, commands } = parsePath(original);
     const serialized = serializePath(sourceKey, commands);
+    expect(Array.from(serialized.matchAll(/\//g)).length).toBe(
+      Array.from(original.matchAll(/\//g)).length,
+    );
     const { commands: commands2 } = parsePath(serialized);
     const opts1 = buildOptions(commands, source);
     const opts2 = buildOptions(commands2, source);

@@ -28,6 +28,8 @@ export interface Style {
   labelAnchor: LabelAnchor;
   labelOffset: number;
   labelSize: number;
+  labelHaloWidth: number;
+  labelHaloColor: string;
 }
 
 export function defaultStyle(): Style {
@@ -41,5 +43,7 @@ export function defaultStyle(): Style {
     labelAnchor: "bottom",
     labelOffset: 2,
     labelColor: "#000000",
+    labelHaloWidth: 0,
+    labelHaloColor: "#FFFFFF",
   };
 }

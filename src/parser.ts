@@ -106,6 +106,16 @@ export interface CommandLabelSize {
   value: number;
 }
 
+export interface CommandLabelHaloWidth {
+  type: "labelHaloWidth";
+  value: number;
+}
+
+export interface CommandLabelHaloColor {
+  type: "labelHaloColor";
+  value: string;
+}
+
 export type Command =
   | CommandColor
   | CommandWidth
@@ -119,6 +129,8 @@ export type Command =
   | CommandLabelAnchor
   | CommandLabelOffset
   | CommandLabelSize
+  | CommandLabelHaloWidth
+  | CommandLabelHaloColor
   | CommandLine
   | CommandPoint
   | CommandSize
@@ -218,6 +230,12 @@ export function buildOptions(
         break;
       case "labelSize":
         style = { ...style, labelSize: command.value };
+        break;
+      case "labelHaloWidth":
+        style = { ...style, labelHaloWidth: command.value };
+        break;
+      case "labelHaloColor":
+        style = { ...style, labelHaloColor: command.value };
         break;
       case "line": {
         const path = decodeLine(command.value, command.precision);
@@ -418,6 +436,19 @@ function parseCommandSegment(segment: string): Command {
         type: "labelSize",
         value: parseNumber(parts[0], "labelSize"),
       };
+    case "labelHaloWidth":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected labelHaloWidth value");
+      }
+      return {
+        type: "labelHaloWidth",
+        value: parseNumber(parts[0], "labelHaloWidth"),
+      };
+    case "labelHaloColor":
+      if (!parts[0]) {
+        throw new HttpError(400, "Expected labelHaloColor value");
+      }
+      return { type: "labelHaloColor", value: parts[0] };
     case "point": {
       if (!parts[0]) {
         throw new HttpError(400, "Expected point value");
@@ -490,6 +521,10 @@ function serializeCommand(command: Command): string {
       return `labelOffset:${command.value}`;
     case "labelSize":
       return `labelSize:${command.value}`;
+    case "labelHaloWidth":
+      return `labelHaloWidth:${command.value}`;
+    case "labelHaloColor":
+      return `labelHaloColor:${encodeURIComponent(command.value)}`;
     case "line":
       return command.precision !== undefined
         ? `line:${command.precision}:${encodeURIComponent(command.value)}`

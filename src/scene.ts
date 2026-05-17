@@ -132,6 +132,12 @@ export class PointNode extends SceneNode {
       ctx.font = `${this.style.labelSize}px "Source Sans 3"`;
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
+      if (this.style.labelHaloWidth > 0) {
+        ctx.lineWidth = this.style.labelHaloWidth * 2;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = this.style.labelHaloColor;
+        ctx.strokeText(this.style.label, this.x + dx, this.y + dy);
+      }
       ctx.fillStyle = this.style.labelColor;
       ctx.fillText(this.style.label, this.x + dx, this.y + dy);
     }

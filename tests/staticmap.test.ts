@@ -217,6 +217,8 @@ describe("renderStaticMap", () => {
               labelColor: "#1e3a5f",
               labelAnchor: "top",
               labelOffset: 4,
+              labelHaloWidth: 3,
+              labelHaloColor: "#ffffff",
             },
           },
         ],
