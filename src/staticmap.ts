@@ -486,16 +486,29 @@ function buildTileUrl(
 }
 
 async function fetchTile(url: string): Promise<Buffer | null> {
+  let log = logger.child({ url });
   try {
     const response = await fetch(url, {
       headers: {
         "User-Agent": "staticmap/1.0 <github.com/dzfranklin/staticmap>",
       },
     });
-    if (!response.ok) return null;
+    log = logger.child({ status: response.status });
+
+    if (response.status === 204 || response.status === 404) {
+      log.info("Tile not found");
+      return null;
+    } else if (!response.ok) {
+      log.error("Failed to fetch tile");
+      return null;
+    }
+
     const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-  } catch {
+    const buf = Buffer.from(arrayBuffer);
+    log.info({ url, size: buf.length }, "Fetched tile");
+    return buf;
+  } catch (err) {
+    logger.error({ err }, `Failed to fetch tile: ${url}`);
     return null;
   }
 }
