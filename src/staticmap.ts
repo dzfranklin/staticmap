@@ -2,8 +2,9 @@ import "./fonts.js";
 import { createCanvas, loadImage } from "canvas";
 import { decodePolyline, type LngLat } from "./polyline.js";
 import proj4 from "proj4";
-import { buildScene } from "./scene.js";
+import { buildScene, PixelRect } from "./scene.js";
 import type { Style } from "./style.js";
+import { logger } from "./logger.js";
 
 const MERCATOR_MAX_LAT = 85.05112878;
 
@@ -272,10 +273,18 @@ export async function renderStaticMap(
 
   const nodes = buildScene(options, zoom, crs);
 
+  const viewportRect: PixelRect = {
+    minX: topLeftX,
+    maxX: topLeftX + options.size.width,
+    minY: topLeftY,
+    maxY: topLeftY + options.size.height,
+  };
+
   ctx.save();
   ctx.scale(internalScale, internalScale);
   ctx.translate(-topLeftX, -topLeftY);
   for (const node of nodes) {
+    if (!node.intersectsRect(viewportRect)) continue;
     ctx.save();
     node.draw(ctx);
     ctx.restore();
