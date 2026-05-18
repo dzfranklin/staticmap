@@ -89,7 +89,7 @@ function defaultExampleValues(
 function renderArgsTable(args: ArgSchema[]): string {
   const rows = args.map(renderArgRow).join("\n");
   return `<table>
-<thead><tr><th>Name</th><th>Type</th><th>Default</th></tr></thead>
+<thead><tr><th>Argument</th><th>Type</th><th>Default</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
