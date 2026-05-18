@@ -167,6 +167,62 @@ describe("renderStaticMap", () => {
       },
     },
     {
+      name: "dashed-line-with-border",
+      options: {
+        source,
+        size: { width: 600, height: 340 },
+        padding: 36,
+        features: [
+          {
+            kind: "line",
+            path: [
+              [-122.5, 37.7],
+              [-122.4, 37.8],
+              [-122.3, 37.75],
+            ],
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#0000ff",
+              width: 12,
+              borderColor: "#ffffff",
+              borderWidth: 4,
+              lineDasharray: [3, 2],
+              lineCap: "butt",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "dashed-line-with-border-short-gap",
+      options: {
+        source,
+        size: { width: 600, height: 340 },
+        padding: 36,
+        features: [
+          {
+            kind: "line",
+            path: [
+              [-122.5, 37.7],
+              [-122.4, 37.8],
+              [-122.3, 37.75],
+            ],
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#0000ff",
+              width: 8,
+              borderColor: "#ffffff",
+              borderWidth: 3,
+              lineDasharray: [5, 3],
+              lineCap: "butt",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
       name: "point",
       options: {
         source,

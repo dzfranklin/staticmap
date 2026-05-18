@@ -56,16 +56,38 @@ export class LineNode extends SceneNode {
     const dash = this.style.lineDasharray;
 
     if ((this.style.borderWidth ?? 0) > 0) {
-      const w = this.style.width + this.style.borderWidth! * 2;
-      ctx.setLineDash(dash ? dash.map((v) => v * w) : []);
+      const bw = this.style.borderWidth!;
+      const w = this.style.width + bw * 2;
+      if (dash) {
+        // Extend each dash by bw on each end and shrink each gap by the same,
+        // then offset phase by -bw so the extensions align with the foreground dashes.
+        const borderDash: number[] = [];
+        for (let i = 0; i < dash.length; i++) {
+          const scaled = dash[i]! * this.style.width;
+          borderDash.push(
+            i % 2 === 0 ? scaled + bw * 2 : Math.max(0, scaled - bw * 2),
+          );
+        }
+        ctx.setLineDash(borderDash);
+      }
       ctx.beginPath();
-      this.tracePath(ctx);
+      if (dash && this.segments.length > 0) {
+        const first = this.segments[0]!;
+        const dx = first.x2 - first.x1;
+        const dy = first.y2 - first.y1;
+        const len = Math.hypot(dx, dy) || 1;
+        ctx.moveTo(first.x1 - (dx / len) * bw, first.y1 - (dy / len) * bw);
+        for (const seg of this.segments) ctx.lineTo(seg.x2, seg.y2);
+      } else {
+        this.tracePath(ctx);
+      }
       ctx.strokeStyle = this.style.borderColor;
       ctx.lineWidth = w;
       ctx.stroke();
     }
 
     ctx.setLineDash(dash ? dash.map((v) => v * this.style.width) : []);
+    ctx.lineDashOffset = 0;
     ctx.beginPath();
     this.tracePath(ctx);
     ctx.strokeStyle = this.style.color;
