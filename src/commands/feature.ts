@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Feature } from "../staticmap.js";
 import { decodePolyline } from "../polyline.js";
 import { ParseError } from "../errors.js";
 import {
@@ -8,8 +7,6 @@ import {
   defineFeatureCommand,
 } from "./base.js";
 import type {
-  FeatureModifiers,
-  BuildState,
   FeatureModifierCommandClass,
   FeatureCommandClass,
 } from "./base.js";
