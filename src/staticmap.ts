@@ -5,6 +5,7 @@ import proj4 from "proj4";
 import { buildScene, PixelRect } from "./scene.js";
 import type { Style } from "./style.js";
 import { logger } from "./logger.js";
+import { HttpError } from "./errors.js";
 
 const MERCATOR_MAX_LAT = 85.05112878;
 
@@ -120,7 +121,7 @@ const epsg27700Crs: Crs = {
     const [easting, northing] = proj4("EPSG:4326", "EPSG:27700", [lng, lat]);
     const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
     if (res === undefined) {
-      throw new Error(`Invalid EPSG:27700 zoom index: ${zoom}`);
+      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
     }
     return {
       x: (easting - EPSG27700_ORIGIN[0]) / res,
@@ -130,7 +131,7 @@ const epsg27700Crs: Crs = {
   pixelToLngLat(x, y, zoom) {
     const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
     if (res === undefined) {
-      throw new Error(`Invalid EPSG:27700 zoom index: ${zoom}`);
+      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
     }
     const easting = x * res + EPSG27700_ORIGIN[0];
     const northing = EPSG27700_ORIGIN[1] - y * res;

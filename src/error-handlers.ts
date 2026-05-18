@@ -3,12 +3,12 @@ import { HttpError } from "./errors.js";
 import express from "express";
 import { logger } from "./logger.js";
 
-export function handleJsonError(error: unknown, res: express.Response): void {
-  const status = error instanceof HttpError ? error.status : 500;
+export function handleJsonError(err: unknown, res: express.Response): void {
+  const status = err instanceof HttpError ? err.status : 500;
   const message =
-    error instanceof HttpError ? error.message : "Internal server error";
-  if (!(error instanceof HttpError)) {
-    logger.error({ error }, "Unhandled error");
+    err instanceof HttpError ? err.message : "Internal server error";
+  if (!(err instanceof HttpError)) {
+    logger.error({ err }, "Unhandled error");
   }
   res
     .status(status)
@@ -16,13 +16,13 @@ export function handleJsonError(error: unknown, res: express.Response): void {
     .json({ error: message });
 }
 
-export function handleError(error: unknown, res: express.Response): void {
-  const status = error instanceof HttpError ? error.status : 500;
+export function handleError(err: unknown, res: express.Response): void {
+  const status = err instanceof HttpError ? err.status : 500;
   const message =
-    error instanceof HttpError ? error.message : "Internal server error";
+    err instanceof HttpError ? err.message : "Internal server error";
 
-  if (!(error instanceof HttpError)) {
-    logger.error({ error }, "Unhandled error");
+  if (!(err instanceof HttpError)) {
+    logger.error({ err }, "Unhandled error");
     res
       .status(500)
       .setHeader("Content-Type", "text/plain")
