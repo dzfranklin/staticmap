@@ -50,7 +50,7 @@ export interface Options {
     width: number;
     height: number;
   };
-  padding: number;
+  padding?: number;
   zoom?: number;
   center?: {
     lng: number;
@@ -182,10 +182,11 @@ export function computeBbox(
 
   if (!Number.isFinite(minX)) return null;
 
-  minX -= options.padding;
-  maxX += options.padding;
-  minY -= options.padding;
-  maxY += options.padding;
+  const padding = options.padding ?? 0;
+  minX -= padding;
+  maxX += padding;
+  minY -= padding;
+  maxY += padding;
 
   return { minX, maxX, minY, maxY };
 }
@@ -319,7 +320,7 @@ export async function renderStaticMap(
       ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
     }
 
-    const pad = options.padding;
+    const pad = options.padding ?? 0;
     ctx.beginPath();
     ctx.rect(0, 0, w, h);
     ctx.rect(pad, pad, w - pad * 2, h - pad * 2);
