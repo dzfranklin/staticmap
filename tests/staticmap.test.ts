@@ -247,6 +247,156 @@ describe("renderStaticMap", () => {
       },
     },
     {
+      name: "point-transparent-with-border",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#00000000",
+              width: 40,
+              borderColor: "#ff0000",
+              borderWidth: 4,
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "point-partly-transparent-with-border",
+      options: {
+        source,
+        size: { width: 300, height: 180 },
+        zoom: 14.4,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#ff000040",
+              width: 40,
+              borderColor: "#ff000060",
+              borderWidth: 4,
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "line-transparent-with-border",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "line",
+            path: [
+              [-122.5, 37.7],
+              [-122.4, 37.8],
+              [-122.3, 37.75],
+            ],
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#00000000",
+              width: 8,
+              borderColor: "#ff0000",
+              borderWidth: 4,
+              lineCap: "round",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "line-partly-transparent-with-border",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "line",
+            path: [
+              [-122.5, 37.7],
+              [-122.4, 37.8],
+              [-122.3, 37.75],
+            ],
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#ff000040",
+              width: 8,
+              borderColor: "#ff000060",
+              borderWidth: 4,
+              lineCap: "round",
+              lineJoin: "round",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "point-label-partly-transparent",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            label: "Hello",
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#ff0000",
+              width: 20,
+              labelColor: "#1e3a5f40",
+              labelAnchor: "top",
+              labelOffset: 4,
+              labelHaloWidth: 3,
+              labelHaloColor: "#ffffff60",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "point-label-transparent",
+      options: {
+        source,
+        size: { width: 320, height: 180 },
+        padding: 20,
+        features: [
+          {
+            kind: "point",
+            lng: -122.4,
+            lat: 37.77,
+            label: "Hello",
+            style: {
+              ...DEFAULT_STYLE,
+              color: "#ff0000",
+              width: 20,
+              labelColor: "#00000000",
+              labelAnchor: "top",
+              labelOffset: 4,
+              labelHaloWidth: 3,
+              labelHaloColor: "#00000080",
+            },
+          },
+        ],
+      },
+    },
+    {
       name: "point-label",
       options: {
         source,
