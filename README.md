@@ -2,8 +2,8 @@
 
 [playground](https://staticmap.plantopo.com/playground.html) [reference](https://staticmap.plantopo.com/reference.html)
 
-Static map renderer based on
-[komoot/staticmap](https://github.com/komoot/staticmap). The interface is
+Static map renderer inspired by
+[komoot/staticmap](https://github.com/komoot/staticmap) with an interface
 inspired by imgproxy.
 
 ## Examples
