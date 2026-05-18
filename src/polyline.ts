@@ -1,9 +1,20 @@
 export type LngLat = readonly [number, number];
 
 export function encodePolyline(
-  coordinates: readonly LngLat[],
+  coordinates: readonly (readonly [number, number])[],
   precision = 5,
 ): string {
+  function encodeValue(value: number): string {
+    let v = value < 0 ? ~(value << 1) : value << 1;
+    let output = "";
+    while (v >= 0x20) {
+      output += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
+      v >>= 5;
+    }
+    output += String.fromCharCode(v + 63);
+    return output;
+  }
+
   if (precision > 6) throw new Error("precision must be 6 or less");
   const factor = Math.pow(10, precision);
   let output = "";
@@ -19,17 +30,6 @@ export function encodePolyline(
     prevLng = lngInt;
   }
 
-  return output;
-}
-
-function encodeValue(value: number): string {
-  let v = value < 0 ? ~(value << 1) : value << 1;
-  let output = "";
-  while (v >= 0x20) {
-    output += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
-    v >>= 5;
-  }
-  output += String.fromCharCode(v + 63);
   return output;
 }
 

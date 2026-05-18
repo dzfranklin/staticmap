@@ -13,7 +13,8 @@ import type {
   FeatureModifierCommandClass,
   FeatureCommandClass,
 } from "./base.js";
-export type { LngLat } from "../polyline.js";
+
+export type LngLat = readonly [number, number];
 
 export const LabelCommand = defineFeatureModifierCommand({
   type: "label",
