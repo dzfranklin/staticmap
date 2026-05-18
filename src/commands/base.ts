@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Style, LabelAnchor } from "../style.js";
+import type { Style } from "../style.js";
 import type { Options, Feature } from "../staticmap.js";
 import { ParseError } from "../errors.js";
 

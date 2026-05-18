@@ -1,4 +1,4 @@
-class UserError extends Error { }
+class UserError extends Error {}
 
 // # Polyline encoding
 
@@ -417,7 +417,7 @@ function updateGeojsonioLink(link, raw) {
   const trimmed = (raw ?? "").trim();
   link.href = trimmed
     ? "http://geojson.io/#data=data:application/json," +
-    encodeURIComponent(trimmed)
+      encodeURIComponent(trimmed)
     : "http://geojson.io/";
 }
 
@@ -646,7 +646,7 @@ async function resolvePages(url) {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new UserError(
-      body.error || `Pages request failed: ${response.status}`,
+      `${response.status} ${response.statusText}${body.error ? ": " + body.error : ""}`,
     );
   }
   return (await response.json()).pages;
@@ -657,9 +657,7 @@ async function fetchMapImage(src, page = null) {
   if (!response.ok) {
     const errorMessage = response.headers.get("X-Map-Error");
     const detail = errorMessage ? `: ${errorMessage}` : "";
-    throw new UserError(
-      `Server returned ${response.status} ${response.statusText}${detail}`,
-    );
+    throw new UserError(`${response.status} ${response.statusText}${detail}`);
   }
   const blob = await response.blob();
   const attribution = response.headers.get("X-Map-Attribution");

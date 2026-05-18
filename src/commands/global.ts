@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Options } from "../staticmap.js";
 import { arg, defineGlobalCommand } from "./base.js";
 import type { GlobalCommandClass } from "./base.js";
 
