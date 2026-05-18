@@ -162,6 +162,12 @@ app.get(/^\/pages\/map:/, async (req, res) => {
       { source_key: sourceKey, commands_length: String(commands.length) },
       Number(process.hrtime.bigint() - computeStart) / 1e9,
     );
+
+    const origin = `${req.protocol}://${req.get("host")}`;
+    result.pages.forEach((p) => {
+      p.url = origin + p.url;
+    });
+
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24);
     res.status(200).json(result);
