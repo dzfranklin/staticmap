@@ -53,13 +53,17 @@ app.get("/", async (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
 
+app.get("/playground", (_req, res) => {
+  res.sendFile(path.join(publicDir, "playground.html"));
+});
+
 app.get("/schema.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.status(200).json(schema);
 });
 
-app.get("/docs/reference", (_req, res) => {
-  const body = generateReference(schema);
+app.get("/reference.html", (_req, res) => {
+  const main = generateReference(schema);
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -69,7 +73,11 @@ app.get("/docs/reference", (_req, res) => {
 <link rel="stylesheet" href="/docs.css">
 </head>
 <body>
-${body}
+<header>
+<h1><a href="/">Staticmap</a></h1>
+<a href="https://github.com/dzfranklin/staticmap">GitHub</a>
+</header>
+${main}
 </body>
 </html>`;
   res.setHeader("Content-Type", "text/html");

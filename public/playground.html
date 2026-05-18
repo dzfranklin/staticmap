@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Staticmap Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.3/turf.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9/dist/leaflet.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9/dist/leaflet.min.js"></script>
+    <link rel="stylesheet" href="/playground.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-row1">
+        <div>
+          <h1>Staticmap Playground</h1>
+          <p class="subhead">
+            <a href="/">Staticmap</a>
+          </p>
+        </div>
+        <div class="header-buttons">
+          <span id="error" class="header-error"></span>
+          <button id="preview-btn" type="button">Preview</button>
+          <button id="reset-btn" class="secondary" type="button">Reset</button>
+          <label class="pages-mode-label">
+            <input type="checkbox" id="pages-mode" />
+            Pages mode
+          </label>
+        </div>
+      </div>
+      <span id="url" class="header-url"></span>
+    </header>
+    <main>
+      <section class="panel">
+        <h2>Inputs</h2>
+        <div class="source-row">
+          <label for="source">Source</label>
+          <input id="source" value="osm" />
+        </div>
+        <div class="command-list" id="command-list"></div>
+        <div class="actions">
+          <div class="add-section" id="add-section"></div>
+        </div>
+      </section>
+      <section class="panel" id="preview-panel">
+        <div class="preview-tabs">
+          <button class="preview-tab active" data-tab="image" type="button">
+            Preview
+          </button>
+          <button class="preview-tab" data-tab="map" type="button">Map</button>
+        </div>
+        <div class="preview-tab-content active" id="tab-image">
+          <div id="preview-grid" class="pages-grid"></div>
+        </div>
+        <div class="preview-tab-content" id="tab-map">
+          <div id="map-container"></div>
+          <p id="map-attribution"></p>
+        </div>
+      </section>
+    </main>
+    <script src="/playground.js"></script>
+  </body>
+</html>

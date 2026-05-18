@@ -25,13 +25,7 @@ export function generateDocs(schema: Schema): string {
     .map(([category, commands]) => renderSection(category, commands))
     .join("\n");
 
-  return `<header>
-<h1>Staticmap</h1>
-<a href="https://github.com/dzfranklin/staticmap">GitHub</a>
-</header>
-<main>
-${sections}
-</main>`;
+  return `<main>${sections}</main>`;
 }
 
 function renderSection(category: string, commands: CommandSchema[]): string {
@@ -40,6 +34,12 @@ function renderSection(category: string, commands: CommandSchema[]): string {
 <h2>${escape(category)}</h2>
 ${items}
 </section>`;
+}
+
+function cmdId(cmd: CommandSchema): string {
+  const restArg = cmd.args.find((a) => a.rest);
+  const arity = restArg ? "rest" : String(cmd.args.length);
+  return `${cmd.type}/${arity}`;
 }
 
 function renderCommand(cmd: CommandSchema): string {
@@ -53,8 +53,9 @@ function renderCommand(cmd: CommandSchema): string {
   const exampleHtml = example
     ? `\n<p class="example">Example: <code>${escape(example)}</code></p>`
     : "";
-  return `<div>
-<h3>${escape(cmd.type)}${aliases}</h3>
+  const id = cmdId(cmd);
+  return `<div id="${escape(id)}">
+<h3>${escape(cmd.type)}<span class="arity">/${escape(id.slice(cmd.type.length + 1))}</span>${aliases}</h3>
 ${argsTable}${exampleHtml}
 </div>`;
 }

@@ -30,8 +30,15 @@ header {
 
 header h1 {
   margin: 0;
-  font-size: 18px;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+
+  a {
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+  }
 }
 
 header a {
@@ -68,6 +75,16 @@ h3 {
   font-size: 15px;
   margin: 0 0 8px;
   font-weight: 500;
+}
+
+.arity {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.arity {
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .aliases {
