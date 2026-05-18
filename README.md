@@ -2,9 +2,10 @@
 
 [playground](https://staticmap.plantopo.com/playground.html) [reference](https://staticmap.plantopo.com/reference.html)
 
-Static map renderer inspired by
-[komoot/staticmap](https://github.com/komoot/staticmap) with an interface
-inspired by imgproxy.
+Staticmap is a server that renders styled features on top of raster map tiles based on commands you specify in the URL. It should be deployed behind a cache.
+
+Originally based on [komoot/staticmap](https://github.com/komoot/staticmap).
+The interface is inspired by imgproxy.
 
 ## Examples
 
@@ -30,28 +31,27 @@ Contains OS data © Crown copyright and database rights 2026
 
 Map tiles © Thunderforest © OpenStreetMap
 
-sources.json:
+**Path builder**
 
-```json
-{
-  "osm": {
-    "attribution": "<a href=\"https://www.thunderforest.com/\">&copy; Thunderforest</a> <a href=\"https://www.openstreetmap.org/copyright\">&copy; OpenStreetMap</a>",
-    "maxzoom": 22,
-    "minzoom": 0,
-    "tileSize": 256,
-    "tiles": [
-      "https://api.thunderforest.com/outdoors/{z}/{x}/{y}@2x.png?apikey=<THUNDERFOREST_KEY>"
-    ]
-  },
-  "os": {
-    "attribution": "Contains OS data &copy; Crown copyright and database rights YYYY",
-    "crs": "EPSG:27700",
-    "maxzoom": 9,
-    "minzoom": 0,
-    "tileSize": 256,
-    "tiles": [
-      "https://api.os.uk/maps/raster/v1/zxy/Leisure_27700/{z}/{x}/{y}.png?key=<OS_KEY>"
-    ]
-  }
-}
+Copy [example-client.ts](https://github.com/dzfranklin/staticmap/blob/main/example-client.ts) into your project. Usage:
+
+```typescript
+const mapUrl = staticmap("osm")
+  .cmd("size", 600, 300)
+  .cmd("padding", 16)
+  .cmd("color", "#0000ff")
+  .cmd("width", 8)
+  .cmd("border", "#ffffff")
+  .cmd("borderWidth", 4)
+  .line(line)
+  .url("https://staticmap.example.com");
 ```
+
+## Configuration
+
+**Environment variables**
+- SOURCES_FILE (default ./sources.json)
+- PORT (default 3000)
+- METRICS_PORT (default 3001)
+
+For SOURCES_FILE see [sources.example.json](https://github.com/dzfranklin/staticmap/blob/main/sources.example.json)
