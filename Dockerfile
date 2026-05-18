@@ -16,5 +16,6 @@ COPY --from=builder /app/node_modules ./app/node_modules
 COPY --from=builder /app/dist ./app/dist
 COPY sources.json /sources.json
 COPY public /public
+COPY fonts /app/fonts
 EXPOSE 3000
-ENTRYPOINT ["node", "--enable-source-maps", "/app/dist/src/server.js"]
+ENTRYPOINT ["node", "--enable-source-maps", "/app/dist/server.js"]
