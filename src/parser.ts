@@ -103,7 +103,8 @@ export function buildOptions(commands: Command[], source: Source): Options {
 
   const size = partial.size ?? { width: 600, height: 400 };
   if (!partial.size) partial.size = size;
-  if (partial.padding === undefined) partial.padding = 0;
+  if (partial.padding === undefined)
+    partial.padding = Math.min(partial.size.width, partial.size.height) * 0.1;
   if (partial.debug === undefined) partial.debug = false;
 
   const resolved = partial as Options;
