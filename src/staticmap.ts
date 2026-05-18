@@ -97,9 +97,10 @@ const epsg3857Crs: Crs = {
   },
   pixelToLngLat(x, y, zoom) {
     const scale = 256 * Math.pow(2, zoom);
-    const lng = (x / scale) * 360 - 180;
+    const lng = Math.round(((x / scale) * 360 - 180) * 1e6) / 1e6;
     const n = Math.PI - (2 * Math.PI * y) / scale;
-    const lat = (180 / Math.PI) * Math.atan(Math.sinh(n));
+    const lat =
+      Math.round((180 / Math.PI) * Math.atan(Math.sinh(n)) * 1e6) / 1e6;
     return { lng, lat };
   },
   tilePixelSize(zoom, sourceTileSize) {
@@ -133,8 +134,14 @@ const epsg27700Crs: Crs = {
     }
     const easting = x * res + EPSG27700_ORIGIN[0];
     const northing = EPSG27700_ORIGIN[1] - y * res;
-    const [lng, lat] = proj4("EPSG:27700", "EPSG:4326", [easting, northing]);
-    return { lng, lat };
+    const [lngRaw, latRaw] = proj4("EPSG:27700", "EPSG:4326", [
+      easting,
+      northing,
+    ]);
+    return {
+      lng: Math.round(lngRaw * 1e6) / 1e6,
+      lat: Math.round(latRaw * 1e6) / 1e6,
+    };
   },
   tilePixelSize(_zoom, sourceTileSize) {
     return sourceTileSize;
