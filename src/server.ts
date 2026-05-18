@@ -7,6 +7,12 @@ import { z } from "zod";
 import { buildOptions, parsePath } from "./parser.js";
 import { renderStaticMap, type Source } from "./staticmap.js";
 import { logger } from "./logger.js";
+import {
+  httpRequestDuration,
+  mapRenderDuration,
+  pagesComputeDuration,
+  startMetricsServer,
+} from "./metrics.js";
 import { HttpError } from "./errors.js";
 import { handleError, handleJsonError } from "./error-handlers.js";
 import { computePages } from "./pages.js";
@@ -19,6 +25,23 @@ const sourcesFile =
 const app = express();
 app.disable("x-powered-by");
 app.use(pinoHttp({ logger }));
+
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on("finish", () => {
+    const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+    const route = req.path.startsWith("/pages/map:")
+      ? "/pages/map:*"
+      : req.path.startsWith("/map:")
+        ? "/map:*"
+        : req.path;
+    httpRequestDuration.observe(
+      { method: req.method, route, status_code: String(res.statusCode) },
+      durationSec,
+    );
+  });
+  next();
+});
 
 const sourceSchema = z.object({
   tiles: z.string().array().min(1),
@@ -104,7 +127,12 @@ app.get(/^\/map:/, async (req, res) => {
       throw new HttpError(400, `Unknown source: ${sourceKey}`);
     }
     const options = buildOptions(commands, source);
+    const renderStart = process.hrtime.bigint();
     const map = await renderStaticMap(options);
+    mapRenderDuration.observe(
+      { source_key: sourceKey, commands_length: String(commands.length) },
+      Number(process.hrtime.bigint() - renderStart) / 1e9,
+    );
 
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24 * 365); // 1 year
@@ -128,7 +156,12 @@ app.get(/^\/pages\/map:/, async (req, res) => {
     if (!source) {
       throw new HttpError(400, `Unknown source: ${sourceKey}`);
     }
+    const computeStart = process.hrtime.bigint();
     const result = computePages(sourceKey, commands, source);
+    pagesComputeDuration.observe(
+      { source_key: sourceKey, commands_length: String(commands.length) },
+      Number(process.hrtime.bigint() - computeStart) / 1e9,
+    );
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24);
     res.status(200).json(result);
@@ -142,12 +175,20 @@ app.use((_req, res) => {
 });
 
 const port = Number(process.env.PORT ?? 3000);
+const metricsPort = Number(process.env.METRICS_PORT ?? 3001);
+
 app.listen(port, () => {
   logger.info({ port }, "staticmap server listening");
 });
 
+const metricsServer = startMetricsServer(metricsPort);
+metricsServer.on("listening", () => {
+  logger.info({ port: metricsPort }, "metrics server listening");
+});
+
 async function shutdown(signal: string) {
   logger.info({ signal }, "Shutting down");
+  metricsServer.close();
   process.exit(0);
 }
 

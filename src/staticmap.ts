@@ -6,6 +6,7 @@ import { buildScene, PixelRect } from "./scene.js";
 import type { Style } from "./style.js";
 import { logger } from "./logger.js";
 import { HttpError } from "./errors.js";
+import { tileFetchDuration } from "./metrics.js";
 
 const MERCATOR_MAX_LAT = 85.05112878;
 
@@ -232,13 +233,12 @@ export async function renderStaticMap(
       const normalized = crs.normalizeTileCoord(tileX, tileY, zoom);
       if (!normalized) continue;
 
-      const url = buildTileUrl(tiles, {
+      const buffer = await fetchTile(tiles, {
         z: tileZ,
         x: normalized.x,
         y: normalized.y,
         r: internalScale === 2 ? "@2x" : "",
       });
-      const buffer = await fetchTile(url);
       if (!buffer) continue;
 
       const image = await loadImage(buffer);
@@ -499,7 +499,12 @@ function buildTileUrl(
     .replace("{r}", params.r);
 }
 
-async function fetchTile(url: string): Promise<Buffer | null> {
+async function fetchTile(
+  tiles: string,
+  params: { z: number; x: number; y: number; r: string },
+): Promise<Buffer | null> {
+  const url = buildTileUrl(tiles, params);
+  const start = process.hrtime.bigint();
   let log = logger.child({ url });
   try {
     const response = await fetch(url, {
@@ -511,18 +516,34 @@ async function fetchTile(url: string): Promise<Buffer | null> {
 
     if (response.status === 204 || response.status === 404) {
       log.info("Tile not found");
+      tileFetchDuration.observe(
+        { tiles },
+        Number(process.hrtime.bigint() - start) / 1e9,
+      );
       return null;
     } else if (!response.ok) {
       log.error("Failed to fetch tile");
+      tileFetchDuration.observe(
+        { tiles },
+        Number(process.hrtime.bigint() - start) / 1e9,
+      );
       return null;
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const buf = Buffer.from(arrayBuffer);
     log.info({ url, size: buf.length }, "Fetched tile");
+    tileFetchDuration.observe(
+      { tiles },
+      Number(process.hrtime.bigint() - start) / 1e9,
+    );
     return buf;
   } catch (err) {
     logger.error({ err }, `Failed to fetch tile: ${url}`);
+    tileFetchDuration.observe(
+      { tiles },
+      Number(process.hrtime.bigint() - start) / 1e9,
+    );
     return null;
   }
 }
