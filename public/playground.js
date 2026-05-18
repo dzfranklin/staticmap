@@ -275,7 +275,8 @@ function loadFromHash() {
       document.getElementById("pages-mode").checked = state.pagesMode ?? false;
       return true;
     }
-  } catch {
+  } catch (err) {
+    console.warn("Failed to load state from URL hash:", err);
     // fall through to default
   }
   return false;
