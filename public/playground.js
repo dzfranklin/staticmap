@@ -92,6 +92,23 @@ function cmdKey(cmd) {
   return `${cmd.type}/${cmdArity(cmd)}`;
 }
 
+async function loadSources() {
+  try {
+    const res = await fetch("/sources.json");
+    const keys = await res.json();
+    const sel = document.getElementById("source");
+    if (Array.isArray(keys) && keys.length > 0) {
+      sel.innerHTML = keys
+        .map((k) => `<option value="${k}">${k}</option>`)
+        .join("");
+      if (!keys.includes(state.source)) state.source = keys[0];
+      sel.value = state.source;
+    }
+  } catch {
+    // leave as-is
+  }
+}
+
 async function loadSchema() {
   const res = await fetch("/schema.json");
   schema = await res.json();
@@ -852,7 +869,7 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   location.href = location.pathname;
 });
 
-document.getElementById("source").addEventListener("input", (e) => {
+document.getElementById("source").addEventListener("change", (e) => {
   state.source = e.target.value.trim();
   onStateChange();
 });
@@ -868,12 +885,11 @@ document.querySelectorAll(".preview-tab").forEach((btn) => {
 
 // # Init
 
-loadSchema().then(() => {
+Promise.all([loadSchema(), loadSources()]).then(() => {
   const restored = loadFromHash();
   if (!restored) state = defaultState();
 
-  // sync source input from state if not already set by loadFromHash
-  // (loadFromHash sets the DOM directly, so just ensure pagesMode checkbox reflects state)
+  document.getElementById("source").value = state.source ?? "";
   document.getElementById("pages-mode").checked = state.pagesMode;
 
   buildAddSection(schema);

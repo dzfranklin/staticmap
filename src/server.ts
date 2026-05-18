@@ -62,6 +62,17 @@ app.get("/schema.json", (_req, res) => {
   res.status(200).json(schema);
 });
 
+app.get("/sources.json", async (_req, res) => {
+  try {
+    const sources = await loadSources(sourcesFile);
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-cache");
+    res.status(200).json(Object.keys(sources));
+  } catch {
+    res.status(200).json([]);
+  }
+});
+
 app.get("/reference.html", (_req, res) => {
   const main = generateReference(schema);
   const html = `<!doctype html>
