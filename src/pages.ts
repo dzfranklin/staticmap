@@ -21,6 +21,15 @@ export interface PageTile {
   size: { width: number; height: number };
   center: { lng: number; lat: number };
   bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number };
+  /** Bounding box in the source CRS native units, present when the CRS is not EPSG:4326/3857.
+   *  For EPSG:27700: x=easting, y=northing in metres, origin at bottom-left. */
+  nativeBounds?: {
+    crs: string;
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  };
 }
 
 export interface ComputePagesResult {
@@ -124,13 +133,27 @@ export function computePages(
         maxLat: topLeft.lat,
         maxLng: bottomRight.lng,
       };
+
+      const crsKey = source.crs ?? "EPSG:3857";
+      let nativeBounds: PageTile["nativeBounds"];
+      if (crsKey !== "EPSG:3857") {
+        const nativeTopLeft = crs.pixelToNative(pageRect.minX, pageRect.minY, zoom);
+        const nativeBottomRight = crs.pixelToNative(pageRect.maxX, pageRect.maxY, zoom);
+        nativeBounds = {
+          crs: crsKey,
+          minX: nativeTopLeft.x,
+          minY: nativeBottomRight.y,
+          maxX: nativeBottomRight.x,
+          maxY: nativeTopLeft.y,
+        };
+      }
       const pageCommands = prependCommandOnce(
         baseCommands,
         new CenterCommand({ lng: center.lng, lat: center.lat }),
       );
       const url = serializePath(sourceKey, pageCommands);
 
-      pages.push({ url, row, col, center, size, bounds });
+      pages.push({ url, row, col, center, size, bounds, nativeBounds });
     }
   }
 

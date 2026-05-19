@@ -74,6 +74,8 @@ export interface Crs {
     y: number,
     zoom: number,
   ): { lng: number; lat: number };
+  /** Convert pixel coords to native CRS units (metres for EPSG:27700, pixels for EPSG:3857). */
+  pixelToNative(x: number, y: number, zoom: number): { x: number; y: number };
   tilePixelSize(zoom: number, sourceTileSize: number): number;
   normalizeTileCoord(
     x: number,
@@ -104,6 +106,9 @@ const epsg3857Crs: Crs = {
     const lat =
       Math.round((180 / Math.PI) * Math.atan(Math.sinh(n)) * 1e6) / 1e6;
     return { lng, lat };
+  },
+  pixelToNative(x, y, _zoom) {
+    return { x, y };
   },
   tilePixelSize(zoom, sourceTileSize) {
     const tileZ = Math.round(zoom);
@@ -143,6 +148,16 @@ const epsg27700Crs: Crs = {
     return {
       lng: Math.round(lngRaw * 1e6) / 1e6,
       lat: Math.round(latRaw * 1e6) / 1e6,
+    };
+  },
+  pixelToNative(x, y, zoom) {
+    const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
+    if (res === undefined) {
+      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
+    }
+    return {
+      x: x * res + EPSG27700_ORIGIN[0],
+      y: EPSG27700_ORIGIN[1] - y * res,
     };
   },
   tilePixelSize(_zoom, sourceTileSize) {
