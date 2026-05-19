@@ -24,6 +24,7 @@ const sourcesFile =
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", true);
 app.use(pinoHttp({ logger }));
 
 app.use((req, res, next) => {
