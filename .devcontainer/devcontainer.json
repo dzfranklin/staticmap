@@ -12,7 +12,8 @@
       "extensions": [
         "ms-python.python",
         "Anthropic.claude-code",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "vitest.explorer"
       ]
     }
   }
