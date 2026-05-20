@@ -30,7 +30,7 @@ function mm(v: number) {
 export const PrintRequestSchema = z.object({
   map: z.string(),
   title: z.string().optional(),
-  margin_mm: z.number().optional(),
+  margin: z.number().optional(),
   style: z.enum(["os"]).optional(),
   pageOverlap: z.number().optional(),
   filename: z.string().optional(),
@@ -63,7 +63,7 @@ async function _render(
   source: Source,
   sourceKey: string,
 ): Promise<Buffer> {
-  const marginMm = req.margin_mm ?? DEFAULT_MARGIN_MM;
+  const marginMm = req.margin ?? DEFAULT_MARGIN_MM;
   const title = req.title ?? "Map";
   const osStyle = req.style === "os";
   const pageOverlap = req.pageOverlap ?? DEFAULT_PAGE_OVERLAP;

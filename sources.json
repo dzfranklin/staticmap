@@ -4,8 +4,6 @@
     "maxzoom": 19,
     "minzoom": 0,
     "tileSize": 256,
-    "tiles": [
-      "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    ]
+    "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]
   }
 }

@@ -98,8 +98,20 @@
           type="number"
           value="10"
           min="0"
-          max="50"
+          max="999"
           step="1"
+        />
+      </label>
+
+      <label
+        >Page overlap (px)
+        <input
+          name="overlap"
+          type="number"
+          value="50"
+          min="0"
+          max="999"
+          step="10"
         />
       </label>
 
@@ -148,7 +160,8 @@
             body: JSON.stringify({
               map,
               title,
-              margin_mm: margin,
+              margin: margin,
+              pageOverlap: parseFloat(data.get("overlap")),
               style: data.get("os_style") === "on" ? "os" : undefined,
               debugMode: data.get("debug") === "on" ? true : undefined,
             }),
