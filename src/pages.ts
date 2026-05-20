@@ -34,6 +34,7 @@ export interface PageTile {
 
 export interface ComputePagesResult {
   pages: PageTile[];
+  attribution?: string;
 }
 
 export function computePages(
@@ -137,8 +138,16 @@ export function computePages(
       const crsKey = source.crs ?? "EPSG:3857";
       let nativeBounds: PageTile["nativeBounds"];
       if (crsKey !== "EPSG:3857") {
-        const nativeTopLeft = crs.pixelToNative(pageRect.minX, pageRect.minY, zoom);
-        const nativeBottomRight = crs.pixelToNative(pageRect.maxX, pageRect.maxY, zoom);
+        const nativeTopLeft = crs.pixelToNative(
+          pageRect.minX,
+          pageRect.minY,
+          zoom,
+        );
+        const nativeBottomRight = crs.pixelToNative(
+          pageRect.maxX,
+          pageRect.maxY,
+          zoom,
+        );
         nativeBounds = {
           crs: crsKey,
           minX: nativeTopLeft.x,

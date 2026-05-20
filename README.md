@@ -50,6 +50,7 @@ const mapUrl = staticmap("osm")
 ## Configuration
 
 **Environment variables**
+
 - SOURCES_FILE (default ./sources.json)
 - PORT (default 3000)
 - METRICS_PORT (default 3001)
