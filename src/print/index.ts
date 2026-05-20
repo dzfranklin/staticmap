@@ -30,6 +30,7 @@ export interface PrintRequest {
   margin_mm?: number;
   style?: "os";
   pageOverlap?: number;
+  filename?: string;
 }
 
 export async function renderPrintPdf(

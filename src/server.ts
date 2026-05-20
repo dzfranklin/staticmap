@@ -171,7 +171,10 @@ app.post("/print", express.json(), async (req, res) => {
     );
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="map.pdf"');
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${body.filename || "map.pdf"}"`,
+    );
     res.status(200).send(pdf);
   } catch (error) {
     handleJsonError(error, res);
