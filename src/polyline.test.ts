@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { decodePolyline, encodePolyline } from "../src/polyline.js";
+import { decodePolyline, encodePolyline } from "./polyline.js";
 
 const input = [
   [-122.4194, 37.7749],

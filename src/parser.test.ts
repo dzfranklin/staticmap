@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOptions, parsePath, serializePath } from "../src/parser.js";
+import { buildOptions, parsePath, serializePath } from "./parser.js";
 import {
   ALL_COMMANDS,
   CenterCommand,
@@ -12,9 +12,9 @@ import {
   STYLE_COMMANDS,
   StyleCommand,
   ZoomCommand,
-} from "../src/commands/index.js";
-import { HttpError } from "../src/errors.js";
-import type { Options, Feature } from "../src/staticmap.js";
+} from "./commands/index.js";
+import { HttpError } from "./errors.js";
+import type { Options, Feature } from "./staticmap.js";
 
 const sampleLine = "_p~iF~ps|U_ulLnnqC"; // encodes two points
 

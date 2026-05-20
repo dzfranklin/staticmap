@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createCanvas } from "canvas";
-import { renderPrintPdf } from "../src/print.js";
-import { HttpError } from "../src/errors.js";
-import type { Source } from "../src/staticmap.js";
+import { renderPrintPdf } from "./print.js";
+import { HttpError } from "./errors.js";
+import type { Source } from "./staticmap.js";
 
 // SF to LA, roughly north-south
 const sfToLa = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";

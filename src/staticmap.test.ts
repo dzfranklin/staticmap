@@ -4,8 +4,8 @@ import path from "path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { renderStaticMap, Options, Source } from "../src/staticmap.js";
-import { DEFAULT_STYLE } from "../src/commands/index.js";
+import { renderStaticMap, Options, Source } from "./staticmap.js";
+import { DEFAULT_STYLE } from "./commands/index.js";
 
 const originalFetch = globalThis.fetch;
 
