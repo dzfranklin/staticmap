@@ -128,9 +128,22 @@ export async function renderPrintPdf(
 
     doc.addPage({ size: [A4_W_PT, A4_H_PT], margin: 0 });
 
-    doc.save(); // -- root
+    if (!debugMode) {
+      doc
+        .rect(marginPt, marginPt, marginPt + innerWPt, marginPt + innerHPt)
+        .clip();
+    } else {
+      doc
+        .save()
+        .fillColor("#debcbc")
+        .rect(0, 0, A4_W_PT, marginPt) // top
+        .rect(0, A4_H_PT - marginPt, A4_W_PT, marginPt) // bottom
+        .rect(0, marginPt, marginPt, A4_H_PT - 2 * marginPt) // left
+        .rect(A4_W_PT - marginPt, marginPt, marginPt, A4_H_PT - 2 * marginPt) // right
+        .fill()
+        .restore();
+    }
     doc.translate(marginPt, marginPt);
-    doc.rect(0, 0, innerWPt, innerHPt).clip();
 
     const imgX = edgePt;
     const imgY = edgePt;
@@ -200,21 +213,6 @@ export async function renderPrintPdf(
       footerH: footerPt,
     });
     doc.restore();
-
-    doc.restore(); // -- root
-    if (debugMode) {
-      doc.fillOpacity(0.2).fillColor("red");
-      // top
-      doc.rect(0, 0, A4_W_PT, marginPt).fill();
-      // bottom
-      doc.rect(0, A4_H_PT - marginPt, A4_W_PT, marginPt).fill();
-      // left
-      doc.rect(0, marginPt, marginPt, A4_H_PT - 2 * marginPt).fill();
-      // right
-      doc
-        .rect(A4_W_PT - marginPt, marginPt, marginPt, A4_H_PT - 2 * marginPt)
-        .fill();
-    }
   }
 
   doc.end();
