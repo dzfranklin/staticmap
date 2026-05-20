@@ -7,7 +7,6 @@ import { PNG } from "pngjs";
 import PDFDocument from "pdfkit";
 import { registerFonts } from "../print/fonts.js";
 import { expect } from "vitest";
-
 export interface SnapshotResult {
   name: string;
   success: boolean;
@@ -18,12 +17,13 @@ export interface SnapshotResult {
   diffPixels?: number;
 }
 
-const snapshotUpdateMode: "missing-only" | "all" | "none" =
-  process.env.UPDATE_ALL_SNAPSHOTS === "1"
-    ? "all"
-    : process.env.UPDATE_NEW_SNAPSHOTS === "1"
-      ? "missing-only"
-      : "none";
+const snapshotUpdateNames: Set<string> = new Set(
+  process.env.UPDATE_SNAPSHOTS
+    ? process.env.UPDATE_SNAPSHOTS.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [],
+);
 
 export function assertVisualSnapshot(
   snapshotDir: string,
@@ -32,26 +32,21 @@ export function assertVisualSnapshot(
 ): void {
   const failureArtifactDir = path.join(snapshotDir, "__artifacts__");
   const result = snapshotTest(snapshotDir, name, buffer);
-  if (!result.success) {
-    if (!result.expected && snapshotUpdateMode !== "none") {
-      writeSnapshot(snapshotDir, name, buffer);
-      console.warn(`Created new snapshot for ${name}`);
-      return;
-    } else if (snapshotUpdateMode === "all") {
-      writeSnapshot(snapshotDir, name, buffer);
-      console.warn(`Updated snapshot for ${name}`);
-      return;
-    }
-
-    writeSnapshotFailureArtifacts(failureArtifactDir, result);
+  if (snapshotUpdateNames.has(name)) {
+    writeSnapshot(snapshotDir, name, buffer);
+    console.warn(`Updated snapshot for ${name}`);
+    return;
   }
 
-  expect(result.success, result.message).toBe(true);
-
-  if (result.success && result.diffPixels) {
+  if (!result.success) {
+    writeSnapshotFailureArtifacts(failureArtifactDir, result);
+    expect
+      .soft(false, result.message ?? `Snapshot assertion failed for ${name}`)
+      .toBe(true);
+  } else if (result.diffPixels) {
     console.warn(
       `Snapshot for ${name} has ${result.diffPixels} differing pixels. ` +
-        `Consider updating the snapshot if this change is expected.`,
+        `Consider updating the snapshot if this change is expected. (UPDATE_SNAPSHOTS=${name})`,
     );
   }
 }
@@ -74,7 +69,7 @@ export function snapshotTest(
     if ((err as NodeJS.ErrnoException).code === "ENOENT") {
       return {
         ...r,
-        message: `Missing snapshot for ${name}. Run with UPDATE_NEW_SNAPSHOTS=1 to create it.`,
+        message: `Missing snapshot for ${name}. Run with UPDATE_SNAPSHOTS=${name} to create it.`,
       };
     } else {
       throw err;
@@ -88,7 +83,7 @@ export function snapshotTest(
   ) {
     const message =
       `Snapshot size mismatch for ${name}. ` +
-      `Expected ${r.expected.width}x${r.expected.height}, got ${r.actual.width}x${r.actual.height}.`;
+      `Expected ${r.expected.width}x${r.expected.height}, got ${r.actual.width}x${r.actual.height}. Run with UPDATE_SNAPSHOTS=${name} to update the snapshot if this change is expected.`;
     return { ...r, message };
   }
 
@@ -109,7 +104,7 @@ export function snapshotTest(
     const message =
       `Snapshot mismatch for ${name}. ` +
       `${(diffRatio * 100).toFixed(2)}% of pixels differ (${r.diffPixels} pixels), ` +
-      `exceeding the threshold of ${(maxDiffRatio * 100).toFixed(2)}%.`;
+      `exceeding the threshold of ${(maxDiffRatio * 100).toFixed(2)}%. If this change is expected, run UPDATE_SNAPSHOTS=${name} npm test.`;
     return { ...r, message };
   }
 
@@ -127,18 +122,24 @@ function writeSnapshotFailureArtifacts(
   const diffPath = path.join(failureArtifactDir, `${r.name}.diff.png`);
 
   fs.mkdirSync(failureArtifactDir, { recursive: true });
+  const writtenFiles: string[] = [];
   if (r.expected) {
     fs.writeFileSync(expectedPath, PNG.sync.write(r.expected));
-    console.warn(`[${r.name}] Wrote expected image to ${expectedPath}`);
+    writtenFiles.push(expectedPath);
   }
   if (r.actual) {
     fs.writeFileSync(actualPath, PNG.sync.write(r.actual));
-    console.warn(`[${r.name}] Wrote actual image to ${actualPath}`);
+    writtenFiles.push(actualPath);
   }
   if (r.diff) {
     fs.writeFileSync(diffPath, PNG.sync.write(r.diff));
-    console.warn(`[${r.name}] Wrote diff image to ${diffPath}`);
+    writtenFiles.push(diffPath);
   }
+  console.error(
+    `Snapshot test failed for ${r.name}. ` +
+      `Wrote failure artifacts to:\n` +
+      writtenFiles.map((f) => `  ${f}`).join("\n"),
+  );
 }
 
 export function assertPDFPageSnapshot(

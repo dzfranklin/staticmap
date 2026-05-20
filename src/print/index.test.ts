@@ -51,7 +51,11 @@ describe("renderPrintPdf", () => {
 
   it("renders two-page OS route", async () => {
     const pdf = await renderPrintPdf(
-      { map: `/map:os/zoom:8/line:${twoPageRoute}`, style: "os" },
+      {
+        map: `/map:os/zoom:8/line:${twoPageRoute}`,
+        style: "os",
+        debugMode: true,
+      },
       osSource,
       "os",
     );

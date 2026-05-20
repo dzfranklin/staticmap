@@ -29,6 +29,7 @@ export interface PrintRequest {
   style?: "os";
   pageOverlap?: number;
   filename?: string;
+  debugMode?: boolean;
 }
 
 export async function renderPrintPdf(
@@ -40,6 +41,7 @@ export async function renderPrintPdf(
   const title = req.title ?? "Map";
   const osStyle = req.style === "os";
   const pageOverlap = req.pageOverlap ?? DEFAULT_PAGE_OVERLAP;
+  const debugMode = req.debugMode ?? false;
 
   const edgeTotalMm = EDGE_MM + (osStyle ? SCALE_BOX_MM : 0) + EDGE_GAP_MM;
 
@@ -122,6 +124,8 @@ export async function renderPrintPdf(
     const mapResult = mapImages[i]!;
 
     doc.addPage({ size: [A4_W_PT, A4_H_PT], margin: 0 });
+
+    doc.save(); // -- root
     doc.translate(marginPt, marginPt);
     doc.rect(0, 0, innerWPt, innerHPt).clip();
 
@@ -197,6 +201,21 @@ export async function renderPrintPdf(
       footerW,
       footerPt,
     );
+
+    doc.restore(); // -- root
+    if (debugMode) {
+      doc.fillOpacity(0.2).fillColor("red");
+      // top
+      doc.rect(0, 0, A4_W_PT, marginPt).fill();
+      // bottom
+      doc.rect(0, A4_H_PT - marginPt, A4_W_PT, marginPt).fill();
+      // left
+      doc.rect(0, marginPt, marginPt, A4_H_PT - 2 * marginPt).fill();
+      // right
+      doc
+        .rect(A4_W_PT - marginPt, marginPt, marginPt, A4_H_PT - 2 * marginPt)
+        .fill();
+    }
   }
 
   doc.end();
