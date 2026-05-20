@@ -18,6 +18,7 @@ import { handleError, handleJsonError } from "./error-handlers.js";
 import { renderPrintPdf, type PrintRequest } from "./print/index.js";
 import schema from "./commands/schema.js";
 import { generateDocs as generateReference } from "./docs/generator.js";
+import { decode as decodeEntities } from "html-entities";
 
 const sourcesFile =
   process.env.SOURCES_FILE ?? path.resolve(process.cwd(), "sources.json");
@@ -45,12 +46,20 @@ app.use((req, res, next) => {
   next();
 });
 
+function transformAttribution(
+  attribution: string | undefined,
+): string | undefined {
+  if (!attribution) return attribution;
+  const year = new Date().getFullYear().toString();
+  return decodeEntities(attribution).replaceAll("YYYY", year);
+}
+
 const sourceSchema = z.object({
   tiles: z.string().array().min(1),
   tileSize: z.number().optional(),
   minzoom: z.number().optional(),
   maxzoom: z.number().optional(),
-  attribution: z.string().optional(),
+  attribution: z.string().optional().transform(transformAttribution),
   crs: z
     .preprocess(
       (v) => (typeof v === "string" ? v.toUpperCase() : v),
