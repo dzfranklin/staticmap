@@ -1,7 +1,14 @@
 import path from "path";
 import { describe, it } from "vitest";
-import { computeEdgeTicks, drawScaleBarH, drawScaleBarV } from "./edge.js";
+import {
+  computeEdgeTicks,
+  drawScaleBarH,
+  drawScaleBarV,
+  EDGE_V_WIDTH_MM,
+  EDGE_H_HEIGHT_MM,
+} from "./edge.js";
 import { assertPDFRegionSnapshot } from "../test-helpers/snapshots.js";
+import { mm } from "./util.js";
 
 const snapshotDir = path.resolve(
   import.meta.dirname,
@@ -9,19 +16,9 @@ const snapshotDir = path.resolve(
   "edge.test.ts",
 );
 
-const EDGE_MM = 2.7;
-const SCALE_BOX_MM = 1.5;
-const EDGE_GAP_MM = 0.5;
-const MARGIN_MM = 10;
-const FOOTER_MM = 10;
-const A4_W_MM = 210;
-const A4_H_MM = 297;
-const PT_PER_MM = 72 / 25.4;
-const mm = (v: number) => v * PT_PER_MM;
-
-const edgeTotalMm = EDGE_MM + SCALE_BOX_MM + EDGE_GAP_MM;
-const imgWMm = A4_W_MM - 2 * (MARGIN_MM + edgeTotalMm);
-const imgHMm = A4_H_MM - 2 * (MARGIN_MM + edgeTotalMm) - FOOTER_MM;
+// approx A4
+const PAGE_W_MM = 210 - 20;
+const PAGE_H_MM = 297 - 20;
 
 const londonBounds = {
   crs: "EPSG:27700",
@@ -31,12 +28,12 @@ const londonBounds = {
   maxY: 182060,
 };
 
-const ticks = computeEdgeTicks(londonBounds, imgWMm, imgHMm);
+const ticks = computeEdgeTicks(londonBounds, PAGE_W_MM, PAGE_H_MM);
 
-const barHW = mm(imgWMm);
-const barHH = mm(2 * edgeTotalMm);
-const barVW = mm(2 * edgeTotalMm);
-const barVH = mm(imgHMm);
+const barHW = mm(PAGE_W_MM);
+const barHH = mm(EDGE_H_HEIGHT_MM);
+const barVW = mm(EDGE_V_WIDTH_MM);
+const barVH = mm(PAGE_H_MM);
 
 describe("drawScaleBarH", () => {
   it("renders top scale bar", () =>
@@ -44,14 +41,7 @@ describe("drawScaleBarH", () => {
       snapshotDir,
       "scale-bar-h-top",
       (doc) => {
-        drawScaleBarH(
-          doc,
-          ticks.top,
-          "top",
-          EDGE_MM,
-          SCALE_BOX_MM,
-          EDGE_GAP_MM,
-        );
+        drawScaleBarH(doc, ticks.top, "top");
       },
       barHW,
       barHH,
@@ -62,14 +52,7 @@ describe("drawScaleBarH", () => {
       snapshotDir,
       "scale-bar-h-bottom",
       (doc) => {
-        drawScaleBarH(
-          doc,
-          ticks.bottom,
-          "bottom",
-          EDGE_MM,
-          SCALE_BOX_MM,
-          EDGE_GAP_MM,
-        );
+        drawScaleBarH(doc, ticks.bottom, "bottom");
       },
       barHW,
       barHH,
@@ -82,14 +65,7 @@ describe("drawScaleBarV", () => {
       snapshotDir,
       "scale-bar-v-left",
       (doc) => {
-        drawScaleBarV(
-          doc,
-          ticks.left,
-          "left",
-          EDGE_MM,
-          SCALE_BOX_MM,
-          EDGE_GAP_MM,
-        );
+        drawScaleBarV(doc, ticks.left, "left");
       },
       barVW,
       barVH,
@@ -100,14 +76,7 @@ describe("drawScaleBarV", () => {
       snapshotDir,
       "scale-bar-v-right",
       (doc) => {
-        drawScaleBarV(
-          doc,
-          ticks.right,
-          "right",
-          EDGE_MM,
-          SCALE_BOX_MM,
-          EDGE_GAP_MM,
-        );
+        drawScaleBarV(doc, ticks.right, "right");
       },
       barVW,
       barVH,

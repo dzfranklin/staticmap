@@ -4,16 +4,18 @@ import { renderStaticMap, type Source } from "../staticmap.js";
 import { HttpError } from "../errors.js";
 import { registerFonts } from "./fonts.js";
 import { computePages } from "./pagination.js";
-import { computeEdgeTicks, drawScaleBarH, drawScaleBarV } from "./edge.js";
-import { drawFooter } from "./footer.js";
+import {
+  computeEdgeTicks,
+  drawScaleBarH,
+  drawScaleBarV,
+  EDGE_H_HEIGHT_MM,
+  EDGE_V_WIDTH_MM,
+} from "./edge.js";
+import { drawFooter, FOOTER_MM } from "./footer.js";
 
 const A4_W_MM = 210;
 const A4_H_MM = 297;
 const MM_PER_PX = 25.4 / 96; // 96 dpi
-const FOOTER_MM = 10;
-const EDGE_MM = 2.7;
-const SCALE_BOX_MM = 1.5;
-const EDGE_GAP_MM = 0.5;
 const DEFAULT_MARGIN_MM = 10;
 const DEFAULT_PAGE_OVERLAP = 50;
 
@@ -43,13 +45,11 @@ export async function renderPrintPdf(
   const pageOverlap = req.pageOverlap ?? DEFAULT_PAGE_OVERLAP;
   const debugMode = req.debugMode ?? false;
 
-  const edgeTotalMm = EDGE_MM + (osStyle ? SCALE_BOX_MM : 0) + EDGE_GAP_MM;
-
   const imgWPx = Math.floor(
-    (A4_W_MM - 2 * (marginMm + edgeTotalMm)) / MM_PER_PX,
+    (A4_W_MM - 2 * (marginMm + EDGE_V_WIDTH_MM)) / MM_PER_PX,
   );
   const imgHPx = Math.floor(
-    (A4_H_MM - 2 * (marginMm + edgeTotalMm) - FOOTER_MM) / MM_PER_PX,
+    (A4_H_MM - 2 * (marginMm + EDGE_H_HEIGHT_MM) - FOOTER_MM) / MM_PER_PX,
   );
   const imgWMm = imgWPx * MM_PER_PX;
   const imgHMm = imgHPx * MM_PER_PX;
@@ -101,7 +101,8 @@ export async function renderPrintPdf(
   const marginPt = mm(marginMm);
   const innerWPt = A4_W_PT - 2 * marginPt;
   const innerHPt = A4_H_PT - 2 * marginPt;
-  const edgePt = mm(edgeTotalMm);
+  const edgeVWidthPt = mm(EDGE_V_WIDTH_MM);
+  const edgeHHeightPt = mm(EDGE_H_HEIGHT_MM);
   const footerPt = mm(FOOTER_MM);
   const imgWPt = mm(imgWMm);
   const imgHPt = mm(imgHMm);
@@ -145,8 +146,8 @@ export async function renderPrintPdf(
     }
     doc.translate(marginPt, marginPt);
 
-    const imgX = edgePt;
-    const imgY = edgePt;
+    const imgX = edgeVWidthPt;
+    const imgY = edgeHHeightPt;
 
     doc.image(mapResult.buffer, imgX, imgY, { width: imgWPt, height: imgHPt });
 
@@ -155,43 +156,22 @@ export async function renderPrintPdf(
 
       doc.save();
       doc.translate(imgX, 0);
-      drawScaleBarH(doc, ticks.top, "top", EDGE_MM, SCALE_BOX_MM, EDGE_GAP_MM);
+      drawScaleBarH(doc, ticks.top, "top");
       doc.restore();
 
       doc.save();
       doc.translate(imgX, imgY + imgHPt);
-      drawScaleBarH(
-        doc,
-        ticks.bottom,
-        "bottom",
-        EDGE_MM,
-        SCALE_BOX_MM,
-        EDGE_GAP_MM,
-      );
+      drawScaleBarH(doc, ticks.bottom, "bottom");
       doc.restore();
 
       doc.save();
       doc.translate(0, imgY);
-      drawScaleBarV(
-        doc,
-        ticks.left,
-        "left",
-        EDGE_MM,
-        SCALE_BOX_MM,
-        EDGE_GAP_MM,
-      );
+      drawScaleBarV(doc, ticks.left, "left");
       doc.restore();
 
       doc.save();
       doc.translate(imgX + imgWPt, imgY);
-      drawScaleBarV(
-        doc,
-        ticks.right,
-        "right",
-        EDGE_MM,
-        SCALE_BOX_MM,
-        EDGE_GAP_MM,
-      );
+      drawScaleBarV(doc, ticks.right, "right");
       doc.restore();
     }
 
@@ -202,7 +182,7 @@ export async function renderPrintPdf(
       right: grid.get(`${page.row},${page.col + 1}`),
     };
     doc.save();
-    doc.translate(0, imgY + imgHPt + edgePt);
+    doc.translate(0, imgY + imgHPt + edgeHHeightPt);
     drawFooter(doc, {
       title,
       pageNum: i + 1,
