@@ -7,8 +7,6 @@ import { computePages } from "./pagination.js";
 import { computeEdgeTicks, drawScaleBarH, drawScaleBarV } from "./edge.js";
 import { drawFooter } from "./footer.js";
 
-// ---------- Layout constants (match plantopo-print pdf.py) ----------
-
 const A4_W_MM = 210;
 const A4_H_MM = 297;
 const MM_PER_PX = 25.4 / 96; // 96 dpi
@@ -99,11 +97,12 @@ export async function renderPrintPdf(
   const A4_W_PT = mm(A4_W_MM);
   const A4_H_PT = mm(A4_H_MM);
   const marginPt = mm(marginMm);
+  const innerWPt = A4_W_PT - 2 * marginPt;
+  const innerHPt = A4_H_PT - 2 * marginPt;
   const edgePt = mm(edgeTotalMm);
   const footerPt = mm(FOOTER_MM);
   const imgWPt = mm(imgWMm);
   const imgHPt = mm(imgHMm);
-
   const doc = new PDFDocument({
     size: [A4_W_PT, A4_H_PT],
     margin: 0,
@@ -123,9 +122,11 @@ export async function renderPrintPdf(
     const mapResult = mapImages[i]!;
 
     doc.addPage({ size: [A4_W_PT, A4_H_PT], margin: 0 });
+    doc.translate(marginPt, marginPt);
+    doc.rect(0, 0, innerWPt, innerHPt).clip();
 
-    const imgX = marginPt + edgePt;
-    const imgY = marginPt + edgePt;
+    const imgX = edgePt;
+    const imgY = edgePt;
 
     doc.image(mapResult.buffer, imgX, imgY, { width: imgWPt, height: imgHPt });
 
@@ -140,7 +141,7 @@ export async function renderPrintPdf(
         SCALE_BOX_MM,
         EDGE_GAP_MM,
         imgX,
-        marginPt,
+        0,
       );
       drawScaleBarH(
         doc,
@@ -159,7 +160,7 @@ export async function renderPrintPdf(
         EDGE_MM,
         SCALE_BOX_MM,
         EDGE_GAP_MM,
-        marginPt,
+        0,
         imgY,
       );
       drawScaleBarV(
@@ -180,9 +181,9 @@ export async function renderPrintPdf(
       left: grid.get(`${page.row},${page.col - 1}`),
       right: grid.get(`${page.row},${page.col + 1}`),
     };
-    const footerX = marginPt;
+    const footerX = 0;
     const footerY = imgY + imgHPt + edgePt;
-    const footerW = A4_W_PT - 2 * marginPt;
+    const footerW = innerWPt;
 
     drawFooter(
       doc,
