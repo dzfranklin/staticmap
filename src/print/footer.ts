@@ -1,11 +1,4 @@
-import PDFDocument from "pdfkit";
-
-const PT_PER_MM = 72 / 25.4;
-function mm(v: number) {
-  return v * PT_PER_MM;
-}
-
-type Doc = InstanceType<typeof PDFDocument>;
+import { type Doc, mm } from "./util.js";
 
 export type DrawFooterOpts = {
   title: string;
@@ -20,7 +13,7 @@ export type DrawFooterOpts = {
 export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
   const { title, pageNum, total, attribution, neighbors, footerW, footerH } =
     opts;
-  const fontSize = 9 * PT_PER_MM;
+  const fontSize = mm(9);
   const textY = (footerH - fontSize) / 2;
 
   doc.fillColor("#1f1f1f").font("SS3-Bold").fontSize(fontSize);

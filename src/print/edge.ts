@@ -1,5 +1,5 @@
-import PDFDocument from "pdfkit";
 import type { PageTile } from "./pagination.js";
+import { type Doc, mm } from "./util.js";
 
 export interface Tick {
   major: boolean;
@@ -17,16 +17,9 @@ export interface EdgeTicks {
   right: Tick[];
 }
 
-const PT_PER_MM = 72 / 25.4;
-function mm(v: number) {
-  return v * PT_PER_MM;
-}
-
 const SCALE_COLOR = "#97cbeb";
 const SCALE_TEXT_COLOR = "#06aeee";
 const STROKE_W = mm(0.3);
-
-type Doc = InstanceType<typeof PDFDocument>;
 
 function gridCrossings(minM: number, maxM: number): number[] {
   const first = Math.ceil(minM / 100) * 100;
