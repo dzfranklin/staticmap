@@ -6,9 +6,13 @@ const testDestination: pino.DestinationStream = {
   },
 };
 
+let level: pino.LevelWithSilent = "debug";
+if (process.env.NODE_ENV === "production") level = "info";
+else if (process.env.NODE_ENV === "test") level = "warn";
+
 export const logger = pino(
   {
-    level: process.env.NODE_ENV === "production" ? "info" : "debug",
+    level,
     base: undefined,
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
