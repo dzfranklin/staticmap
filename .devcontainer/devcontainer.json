@@ -1,7 +1,7 @@
 {
   "name": "staticmap",
   "image": "node:20-bookworm",
-  "onCreateCommand": "apt-get update && apt-get install -y --no-install-recommends libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
+  "onCreateCommand": "apt-get update && apt-get install -y --no-install-recommends libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev poppler-utils",
   "postCreateCommand": "npm install",
   "mounts": [
     "source=staticmap-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"

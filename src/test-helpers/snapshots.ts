@@ -1,7 +1,11 @@
+import { execFileSync } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
+import PDFDocument from "pdfkit";
+import { registerFonts } from "../print/fonts.js";
 import { expect } from "vitest";
 
 export interface SnapshotResult {
@@ -134,6 +138,98 @@ function writeSnapshotFailureArtifacts(
   if (r.diff) {
     fs.writeFileSync(diffPath, PNG.sync.write(r.diff));
     console.warn(`[${r.name}] Wrote diff image to ${diffPath}`);
+  }
+}
+
+export function assertPDFPageSnapshot(
+  snapshotDir: string,
+  name: string,
+  drawFn: (doc: InstanceType<typeof PDFDocument>) => void,
+  widthMm: number,
+  heightMm: number,
+  dpi = 150,
+): Promise<void> {
+  const PT_PER_MM = 72 / 25.4;
+  const doc = new PDFDocument({
+    size: [widthMm * PT_PER_MM, heightMm * PT_PER_MM],
+    margin: 0,
+    autoFirstPage: true,
+  });
+  registerFonts(doc);
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+  const done = new Promise<void>((resolve) =>
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-snapshot-"));
+      try {
+        const pdfPath = path.join(tmp, "page.pdf");
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        execFileSync("pdftoppm", [
+          "-r",
+          String(dpi),
+          "-png",
+          "-f",
+          "1",
+          "-l",
+          "1",
+          pdfPath,
+          path.join(tmp, "out"),
+        ]);
+        const png = fs.readFileSync(path.join(tmp, "out-1.png"));
+        assertVisualSnapshot(snapshotDir, name, png);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+      resolve();
+    }),
+  );
+  drawFn(doc);
+  doc.end();
+  return done;
+}
+
+function existingPDFSnapshotCount(snapshotDir: string, name: string): number {
+  let count = 0;
+  while (fs.existsSync(path.join(snapshotDir, `${name}.${count + 1}.png`)))
+    count++;
+  return count;
+}
+
+export function assertPDFSnapshot(
+  snapshotDir: string,
+  name: string,
+  pdfBuffer: Buffer,
+  dpi = 150,
+): void {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-snapshot-"));
+  try {
+    const pdfPath = path.join(tmp, "page.pdf");
+    fs.writeFileSync(pdfPath, pdfBuffer);
+    execFileSync("pdftoppm", [
+      "-r",
+      String(dpi),
+      "-png",
+      pdfPath,
+      path.join(tmp, "out"),
+    ]);
+    const pngFiles = fs
+      .readdirSync(tmp)
+      .filter((f) => f.startsWith("out-") && f.endsWith(".png"))
+      .sort();
+    const existingCount = existingPDFSnapshotCount(snapshotDir, name);
+    if (existingCount > 0) {
+      expect(
+        pngFiles.length,
+        `Expected ${existingCount} pages but got ${pngFiles.length}`,
+      ).toBe(existingCount);
+    }
+    for (let i = 0; i < pngFiles.length; i++) {
+      const png = fs.readFileSync(path.join(tmp, pngFiles[i]!));
+      assertVisualSnapshot(snapshotDir, `${name}.${i + 1}`, png);
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
 
