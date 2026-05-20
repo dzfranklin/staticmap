@@ -443,7 +443,6 @@ describe("renderStaticMap", () => {
       source,
       size: { width: 320, height: 180 },
       padding: 16,
-      pageOverlap: 60,
       debug: true,
       features: [
         {
