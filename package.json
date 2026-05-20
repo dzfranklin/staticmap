@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node --import tsx/esm src/server.ts | pino-pretty",
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/server.ts | pino-pretty",
     "check": "prettier --write --log-level warn . && tsc --noEmit",
     "test": "vitest --run --silent=passed-only",
     "clean": "rm -rf ./dist",
