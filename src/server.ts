@@ -15,7 +15,11 @@ import {
 } from "./metrics.js";
 import { HttpError } from "./errors.js";
 import { handleError, handleJsonError } from "./error-handlers.js";
-import { renderPrintPdf, type PrintRequest } from "./print/index.js";
+import {
+  PrintRequestSchema,
+  renderPrintPdf,
+  type PrintRequest,
+} from "./print/index.js";
 import schema from "./commands/schema.js";
 import { generateDocs as generateReference } from "./docs/generator.js";
 import { decode as decodeEntities } from "html-entities";
@@ -161,23 +165,17 @@ app.get(/^\/map:/, async (req, res) => {
 
 app.post("/print", express.json(), async (req, res) => {
   try {
-    const body = req.body as PrintRequest;
-    if (!body.map) {
-      throw new HttpError(400, "missing required field: map");
+    const bodyResult = PrintRequestSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      throw new HttpError(
+        400,
+        "Invalid request body: " + z.prettifyError(bodyResult.error),
+      );
     }
-    const sources = await loadSources(sourcesFile);
-    const { sourceKey } = parsePath(body.map.replace(/\s+/g, ""));
-    const source = sources[sourceKey];
-    if (!source) {
-      throw new HttpError(400, `Unknown source: ${sourceKey}`);
-    }
+    const body = bodyResult.data;
 
-    const renderStart = process.hrtime.bigint();
-    const pdf = await renderPrintPdf(body, source, sourceKey);
-    printDuration.observe(
-      { source_key: sourceKey },
-      Number(process.hrtime.bigint() - renderStart) / 1e9,
-    );
+    const sources = await loadSources(sourcesFile);
+    const pdf = await renderPrintPdf(body, sources);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(

@@ -13,16 +13,17 @@ const sfToLa = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 const twoPageRoute =
   "miv{IrbzUj@}AjAyAfAg@^GRUX?N[VIf@y@n@WFWjAcAjC_EdE{IxC}FpAaEZ_CvDyH`DyCjC{Av@eBXEhFuK~@q@Z}BtEgHhGmGdJ_HvCkAxFqBzALbfAtv@tcAqEeEscBmpBdYgKf@aXmOcB_DcCaFyIqJ";
 
-const osSource: Source = {
-  tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
-  tileSize: 256,
-  crs: "EPSG:27700",
-  attribution: "© Crown copyright and database rights 2026",
-};
-
-const source: Source = {
-  tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
-  tileSize: 256,
+const sources: Record<string, Source> = {
+  os: {
+    tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    crs: "EPSG:27700",
+    attribution: "© Crown copyright and database rights 2026",
+  },
+  osm: {
+    tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
+    tileSize: 256,
+  },
 };
 
 mockTileFetch();
@@ -37,15 +38,14 @@ describe("renderPrintPdf", () => {
   it("returns a PDF buffer", async () => {
     const pdf = await renderPrintPdf(
       { map: `/map:osm/zoom:6/line:${sfToLa}` },
-      source,
-      "osm",
+      sources,
     );
     expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
   });
 
   it("rejects when no features provided", async () => {
     await expect(
-      renderPrintPdf({ map: `/map:osm/zoom:8` }, source, "osm"),
+      renderPrintPdf({ map: `/map:osm/zoom:8` }, sources),
     ).rejects.toThrow(HttpError);
   });
 
@@ -56,8 +56,7 @@ describe("renderPrintPdf", () => {
         style: "os",
         debugMode: true,
       },
-      osSource,
-      "os",
+      sources,
     );
     assertPDFSnapshot(snapshotDir, "two-page-os", pdf);
   });
@@ -66,8 +65,7 @@ describe("renderPrintPdf", () => {
     await expect(
       renderPrintPdf(
         { map: `/map:osm/zoom:6/line:${sfToLa}`, style: "os" },
-        source,
-        "osm",
+        sources,
       ),
     ).rejects.toThrow(HttpError);
   });

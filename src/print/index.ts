@@ -12,6 +12,8 @@ import {
   EDGE_V_WIDTH_MM,
 } from "./edge.js";
 import { drawFooter, FOOTER_H_MM } from "./footer.js";
+import z from "zod";
+import { printDuration } from "../metrics.js";
 
 const A4_W_MM = 210;
 const A4_H_MM = 297;
@@ -24,17 +26,38 @@ function mm(v: number) {
   return v * PT_PER_MM;
 }
 
-export interface PrintRequest {
-  map: string;
-  title?: string;
-  margin_mm?: number;
-  style?: "os";
-  pageOverlap?: number;
-  filename?: string;
-  debugMode?: boolean;
-}
+export const PrintRequestSchema = z.object({
+  map: z.string(),
+  title: z.string().optional(),
+  margin_mm: z.number().optional(),
+  style: z.enum(["os"]).optional(),
+  pageOverlap: z.number().optional(),
+  filename: z.string().optional(),
+  debugMode: z.boolean().optional(),
+});
+
+export type PrintRequest = z.infer<typeof PrintRequestSchema>;
 
 export async function renderPrintPdf(
+  req: PrintRequest,
+  sources: Record<string, Source>,
+): Promise<Buffer> {
+  const { sourceKey } = parsePath(req.map);
+  const source = sources[sourceKey];
+  if (!source) {
+    throw new HttpError(400, `Unknown source: ${sourceKey}`);
+  }
+
+  const renderStart = process.hrtime.bigint();
+  const pdf = await _render(req, source, sourceKey);
+  printDuration.observe(
+    { source_key: sourceKey },
+    Number(process.hrtime.bigint() - renderStart) / 1e9,
+  );
+  return pdf;
+}
+
+async function _render(
   req: PrintRequest,
   source: Source,
   sourceKey: string,
