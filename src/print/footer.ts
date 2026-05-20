@@ -1,6 +1,9 @@
-import { type Doc, mm } from "./util.js";
+import { type Doc, fontCapHeight, mm } from "./util.js";
 
-export const FOOTER_MM = 20;
+const NEIGHBOR_GRID_CELL_MM = 4;
+const NEIGHBOR_GRID_SIZE_MM = NEIGHBOR_GRID_CELL_MM * 3;
+
+export const FOOTER_H_MM = 14;
 
 export type DrawFooterOpts = {
   title: string;
@@ -12,84 +15,109 @@ export type DrawFooterOpts = {
   footerH: number;
 };
 
+const hasNeighbors = (neighbors: DrawFooterOpts["neighbors"]) =>
+  neighbors.top !== undefined ||
+  neighbors.bottom !== undefined ||
+  neighbors.left !== undefined ||
+  neighbors.right !== undefined;
+
 export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
+  const h = mm(FOOTER_H_MM);
+
   const { title, pageNum, total, attribution, neighbors, footerW, footerH } =
     opts;
-  const fontSize = mm(9);
 
-  doc.fillColor("#1f1f1f").font("SS3-Bold").fontSize(fontSize);
+  doc.fillColor("#1f1f1f");
 
-  const textY = (footerH - doc.currentLineHeight()) / 2;
-
-  doc.text(title, 0, textY, { lineBreak: false, continued: true });
-  doc.font("SS3").text(` ${pageNum}/${total}`, { lineBreak: false });
-
-  const cellMm = 4;
-  const gapMm = 0.5;
-  const hasNeighbors =
-    neighbors.top !== undefined ||
-    neighbors.bottom !== undefined ||
-    neighbors.left !== undefined ||
-    neighbors.right !== undefined;
-
-  let rightEdge = footerW;
-
-  if (hasNeighbors) {
-    const gridW = mm(cellMm * 3 + gapMm * 2);
-    const gridH = mm(cellMm * 3 + gapMm * 2);
-    const gridX = rightEdge - gridW - mm(1);
-    const gridY = (footerH - gridH) / 2;
-    drawPageGrid(doc, pageNum, neighbors, gridX, gridY, cellMm, gapMm);
-    rightEdge = gridX - mm(2);
+  if (hasNeighbors(neighbors)) {
+    const gridX = footerW - mm(NEIGHBOR_GRID_SIZE_MM) - 1;
+    const gridY = footerH - mm(NEIGHBOR_GRID_SIZE_MM) - 1;
+    drawNeighborsGrid(doc, pageNum, neighbors, gridX, gridY);
   }
 
+  const right = footerW - mm(NEIGHBOR_GRID_SIZE_MM) - mm(2) - 1;
+  const left = 1;
+  const width = right - left;
+
+  doc.font("SS3-Bold").fontSize(16);
+  const titleSpace = doc.widthOfString(title) < width * 0.75 ? footerW : width;
+  doc.text(title, 1, 0, {
+    baseline: "top",
+    width: titleSpace,
+    height: doc.currentLineHeight(),
+    ellipsis: true,
+    align: "center",
+  });
+
+  const pageText = `Page ${pageNum} of ${total}`;
+  doc.font("SS3").fontSize(9);
+  const pageTextW = doc.widthOfString(pageText);
+  doc.text(pageText, 1, h, { baseline: "bottom" });
+
   if (attribution) {
-    doc.font("SS3-Italic").fontSize(fontSize).fillColor("#444");
-    const attrW = doc.widthOfString(attribution);
-    doc.text(attribution, rightEdge - attrW, textY, { lineBreak: false });
+    const left = pageTextW + mm(4);
+    const width = right - left;
+    doc.font("SS3-Italic").text(attribution, left, h, {
+      baseline: "bottom",
+      width,
+      height: doc.currentLineHeight(),
+      ellipsis: true,
+    });
   }
 }
 
-export function drawPageGrid(
+export function drawNeighborsGrid(
   doc: Doc,
   currentPageNum: number,
   neighbors: { top?: number; bottom?: number; left?: number; right?: number },
   originX: number,
   originY: number,
-  cellMm: number,
-  gapMm: number,
 ) {
-  const cellPt = mm(cellMm);
-  const gapPt = mm(gapMm);
-  const labelFontSize = mm(cellMm * 0.55);
+  doc.save();
+
+  const cellPt = mm(NEIGHBOR_GRID_CELL_MM);
 
   const cells: Array<[number, number, number | undefined]> = [
+    [1, 1, currentPageNum],
     [1, 0, neighbors.top],
     [0, 1, neighbors.left],
-    [1, 1, currentPageNum],
     [2, 1, neighbors.right],
     [1, 2, neighbors.bottom],
   ];
 
   for (const [gc, gr, num] of cells) {
     if (num === undefined) continue;
-    const cx = originX + gc * (cellPt + gapPt);
-    const cy = originY + gr * (cellPt + gapPt);
-    const isCurrent = gc === 1 && gr === 1;
+    const cx = originX + gc * cellPt;
+    const cy = originY + gr * cellPt;
+    const b = 0.25; // border width
+    const isCurrent = num === currentPageNum;
 
-    doc
-      .rect(cx, cy, cellPt, cellPt)
-      .lineWidth(0.6)
-      .fillAndStroke(isCurrent ? "#e8edf5" : "white", "#555");
+    doc.rect(cx, cy, cellPt, cellPt).lineWidth(b).strokeColor("#333").stroke();
 
     const label = String(num);
-    doc
-      .fillColor("#333")
-      .font(isCurrent ? "SS3-Bold" : "SS3")
-      .fontSize(labelFontSize);
-    const lw = doc.widthOfString(label);
-    doc.text(label, cx + (cellPt - lw) / 2, cy + (cellPt - labelFontSize) / 2, {
+    doc.fillColor("#333").font("SS3");
+    if (isCurrent) doc.font("SS3-Bold");
+
+    const textSpace = cellPt - b * 2 - 1;
+    let fontSize = 7;
+    doc.fontSize(fontSize);
+    let lw = doc.widthOfString(label);
+    if (lw > textSpace) {
+      do {
+        fontSize -= 0.5;
+        doc.fontSize(fontSize);
+        lw = doc.widthOfString(label);
+      } while (lw > textSpace && fontSize > 3);
+    }
+
+    const lh = fontCapHeight(doc);
+    doc.text(label, cx + (cellPt - lw) / 2 + b, cy + (cellPt + lh) / 2 + b, {
       lineBreak: false,
+      width: cellPt,
+      height: cellPt,
+      baseline: "alphabetic",
     });
   }
+
+  doc.restore();
 }

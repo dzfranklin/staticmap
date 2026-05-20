@@ -11,7 +11,7 @@ import {
   EDGE_H_HEIGHT_MM,
   EDGE_V_WIDTH_MM,
 } from "./edge.js";
-import { drawFooter, FOOTER_MM } from "./footer.js";
+import { drawFooter, FOOTER_H_MM } from "./footer.js";
 
 const A4_W_MM = 210;
 const A4_H_MM = 297;
@@ -49,7 +49,7 @@ export async function renderPrintPdf(
     (A4_W_MM - 2 * (marginMm + EDGE_V_WIDTH_MM)) / MM_PER_PX,
   );
   const imgHPx = Math.floor(
-    (A4_H_MM - 2 * (marginMm + EDGE_H_HEIGHT_MM) - FOOTER_MM) / MM_PER_PX,
+    (A4_H_MM - 2 * (marginMm + EDGE_H_HEIGHT_MM) - FOOTER_H_MM) / MM_PER_PX,
   );
   const imgWMm = imgWPx * MM_PER_PX;
   const imgHMm = imgHPx * MM_PER_PX;
@@ -103,7 +103,7 @@ export async function renderPrintPdf(
   const innerHPt = A4_H_PT - 2 * marginPt;
   const edgeVWidthPt = mm(EDGE_V_WIDTH_MM);
   const edgeHHeightPt = mm(EDGE_H_HEIGHT_MM);
-  const footerPt = mm(FOOTER_MM);
+  const footerPt = mm(FOOTER_H_MM);
   const imgWPt = mm(imgWMm);
   const imgHPt = mm(imgHMm);
   const doc = new PDFDocument({

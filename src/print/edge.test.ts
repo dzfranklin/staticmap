@@ -36,8 +36,8 @@ const barVW = mm(EDGE_V_WIDTH_MM);
 const barVH = mm(PAGE_H_MM);
 
 describe("drawScaleBarH", () => {
-  it("renders top scale bar", () =>
-    assertPDFRegionSnapshot(
+  it("renders top scale bar", async () =>
+    await assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-h-top",
       (doc) => {
@@ -47,8 +47,8 @@ describe("drawScaleBarH", () => {
       barHH,
     ));
 
-  it("renders bottom scale bar", () =>
-    assertPDFRegionSnapshot(
+  it("renders bottom scale bar", async () =>
+    await assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-h-bottom",
       (doc) => {
@@ -60,8 +60,8 @@ describe("drawScaleBarH", () => {
 });
 
 describe("drawScaleBarV", () => {
-  it("renders left scale bar", () =>
-    assertPDFRegionSnapshot(
+  it("renders left scale bar", async () =>
+    await assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-v-left",
       (doc) => {
@@ -71,8 +71,8 @@ describe("drawScaleBarV", () => {
       barVH,
     ));
 
-  it("renders right scale bar", () =>
-    assertPDFRegionSnapshot(
+  it("renders right scale bar", async () =>
+    await assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-v-right",
       (doc) => {
