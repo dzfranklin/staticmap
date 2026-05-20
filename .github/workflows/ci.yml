@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts-${{ github.run_id }}
-          path: tests/__artifacts__/**
+          path: "**/__artifacts__/**"
           if-no-files-found: warn
 
       - name: Build production image

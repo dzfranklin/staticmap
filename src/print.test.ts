@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createCanvas } from "canvas";
+import { describe, expect, it } from "vitest";
 import { renderPrintPdf } from "./print.js";
 import { HttpError } from "./errors.js";
 import type { Source } from "./staticmap.js";
+import { mockTileFetch } from "./test-helpers/tile-mock.js";
 
 // SF to LA, roughly north-south
 const sfToLa = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
@@ -12,31 +12,7 @@ const source: Source = {
   tileSize: 256,
 };
 
-function makeTile(z: number, x: number, y: number): Buffer {
-  const size = 256;
-  const canvas = createCanvas(size * 2, size * 2);
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = `rgb(${(x * 40) % 255}, ${(y * 80) % 255}, ${(z * 60) % 255})`;
-  ctx.fillRect(0, 0, size * 2, size * 2);
-  return canvas.toBuffer("image/png");
-}
-
-const originalFetch = globalThis.fetch;
-
-beforeEach(() => {
-  globalThis.fetch = (async (input: string | URL) => {
-    const url = input.toString();
-    const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.png/);
-    const z = match ? Number.parseInt(match[1]!, 10) : 0;
-    const x = match ? Number.parseInt(match[2]!, 10) : 0;
-    const y = match ? Number.parseInt(match[3]!, 10) : 0;
-    return new Response(new Uint8Array(makeTile(z, x, y)));
-  }) as typeof fetch;
-});
-
-afterEach(() => {
-  globalThis.fetch = originalFetch;
-});
+mockTileFetch();
 
 describe("renderPrintPdf", () => {
   it("returns a PDF buffer", async () => {
