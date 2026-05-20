@@ -1,6 +1,6 @@
 # staticmap
 
-[playground](https://staticmap.plantopo.com/playground.html) [reference](https://staticmap.plantopo.com/reference.html)
+[playground](https://staticmap.plantopo.com/playground.html) [print-playground](https://staticmap.plantopo.com/print-playground.html) [reference](https://staticmap.plantopo.com/reference.html)
 
 Staticmap is a server that renders styled features on top of raster map tiles based on commands you specify in the URL. It should be deployed behind a cache.
 
@@ -23,13 +23,9 @@ Map tiles © Thunderforest © OpenStreetMap
 
 Contains OS data © Crown copyright and database rights 2026
 
-**Layout fixed size pages (for printing routes)**
+**Printing routes to PDF**
 
-`/pages/map:osm/size:500:300/pageOverlap:10/zoom:15/padding:30/color:%230000ff/width:10/border:%23ffffff/borderWidth:6/line:miv%7BIrbzUj%40%7DAjAyAfAg%40%5EGRUX%3FN%5BVIf%40y%40n%40WFWjAcAjC_EdE%7BIxC%7DFpAaEZ_CnAiCfBoD%60DyCjC%7BAv%40eBXElCqFzAcD~%40q%40Z%7DBjDsG`
-
-<img width="504" height="627" alt="Two pages" src="https://github.com/user-attachments/assets/d9194a09-dd32-478d-9f47-5938840e70f5" />
-
-Map tiles © Thunderforest © OpenStreetMap
+See [print-playground](https://staticmap.plantopo.com/print-playground.html)
 
 **Path builder**
 
