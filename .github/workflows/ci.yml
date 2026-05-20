@@ -20,17 +20,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v4
+      - name: Run CI in devcontainer
+        uses: devcontainers/ci@v0.3
         with:
-          node-version: "20"
-          cache: "npm"
-      - run: npm ci
-
-      - name: Typecheck
-        run: npm run check
-
-      - name: Test
-        run: npm test
+          imageName: ghcr.io/${{ github.repository }}-ci-cache
+          runCmd: |
+            npm ci
+            npm run check
+            npm test
 
       - name: Upload test artifacts
         if: failure()
