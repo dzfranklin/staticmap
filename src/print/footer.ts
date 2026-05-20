@@ -7,18 +7,20 @@ function mm(v: number) {
 
 type Doc = InstanceType<typeof PDFDocument>;
 
-export function drawFooter(
-  doc: Doc,
-  title: string,
-  pageNum: number,
-  total: number,
-  attribution: string | undefined,
-  neighbors: { top?: number; bottom?: number; left?: number; right?: number },
-  footerX: number,
-  footerY: number,
-  footerW: number,
-  footerH: number,
-) {
+export type DrawFooterOpts = {
+  title: string;
+  pageNum: number;
+  total: number;
+  attribution: string | undefined;
+  neighbors: { top?: number; bottom?: number; left?: number; right?: number };
+  footerX: number;
+  footerY: number;
+  footerW: number;
+  footerH: number;
+};
+
+export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
+  const { title, pageNum, total, attribution, neighbors, footerX, footerY, footerW, footerH } = opts;
   const fontSize = 9 * PT_PER_MM;
   const textY = footerY + (footerH - fontSize) / 2;
 

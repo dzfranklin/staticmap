@@ -189,18 +189,17 @@ export async function renderPrintPdf(
     const footerY = imgY + imgHPt + edgePt;
     const footerW = innerWPt;
 
-    drawFooter(
-      doc,
+    drawFooter(doc, {
       title,
-      i + 1,
+      pageNum: i + 1,
       total,
       attribution,
       neighbors,
       footerX,
       footerY,
       footerW,
-      footerPt,
-    );
+      footerH: footerPt,
+    });
 
     doc.restore(); // -- root
     if (debugMode) {
