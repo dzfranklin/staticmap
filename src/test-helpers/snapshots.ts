@@ -30,22 +30,18 @@ export function assertVisualSnapshot(
   snapshotDir: string,
   name: string,
   buffer: Buffer,
-): void {
+): SnapshotResult {
   const failureArtifactDir = path.join(snapshotDir, "__artifacts__");
   const result = snapshotTest(snapshotDir, name, buffer);
   if (snapshotUpdateNames.has(name)) {
     writeSnapshot(snapshotDir, name, buffer);
     console.warn(`Updated snapshot for ${name}`);
-    return;
   } else if (createNewSnapshots && !result.expected) {
     writeSnapshot(snapshotDir, name, buffer);
     console.warn(
       `Created new snapshot for ${name} (it will be used in future test runs)`,
     );
-    return;
-  }
-
-  if (!result.success) {
+  } else if (!result.success) {
     writeSnapshotFailureArtifacts(failureArtifactDir, result);
     expect
       .soft(false, result.message ?? `Snapshot assertion failed for ${name}`)
@@ -56,6 +52,8 @@ export function assertVisualSnapshot(
         `Consider updating the snapshot if this change is expected. (UPDATE_SNAPSHOTS=${name})`,
     );
   }
+
+  return result;
 }
 
 export function snapshotTest(
@@ -300,8 +298,10 @@ export function assertPDFSnapshot(
   dpi = 150,
 ): void {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-snapshot-"));
+  const pdfPath = path.join(tmp, "page.pdf");
+  const artifactDir = path.join(snapshotDir, "__artifacts__");
+  let hasFailure = false;
   try {
-    const pdfPath = path.join(tmp, "page.pdf");
     fs.writeFileSync(pdfPath, pdfBuffer);
     execFileSync("pdftoppm", [
       "-r",
@@ -323,9 +323,18 @@ export function assertPDFSnapshot(
     }
     for (let i = 0; i < pngFiles.length; i++) {
       const png = fs.readFileSync(path.join(tmp, pngFiles[i]!));
-      assertVisualSnapshot(snapshotDir, `${name}.${i + 1}`, png);
+      const result = assertVisualSnapshot(snapshotDir, `${name}.${i + 1}`, png);
+      hasFailure = hasFailure || !result.success;
     }
   } finally {
+    if (hasFailure) {
+      const pdfArtifactPath = path.join(artifactDir, `${name}.pdf`);
+      fs.mkdirSync(artifactDir, { recursive: true });
+      fs.copyFileSync(pdfPath, pdfArtifactPath);
+      console.error(
+        `Error occurred while processing PDF snapshot for ${name}. Artifact written to: ${pdfArtifactPath}`,
+      );
+    }
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
