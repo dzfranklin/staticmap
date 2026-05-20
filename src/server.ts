@@ -15,7 +15,7 @@ import {
 } from "./metrics.js";
 import { HttpError } from "./errors.js";
 import { handleError, handleJsonError } from "./error-handlers.js";
-import { renderPrintPdf, type PrintRequest } from "./print.js";
+import { renderPrintPdf, type PrintRequest } from "./print/index.js";
 import schema from "./commands/schema.js";
 import { generateDocs as generateReference } from "./docs/generator.js";
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { renderPrintPdf } from "./print.js";
-import { HttpError } from "./errors.js";
-import type { Source } from "./staticmap.js";
-import { mockTileFetch } from "./test-helpers/tile-mock.js";
+import { renderPrintPdf } from "./index.js";
+import { HttpError } from "../errors.js";
+import type { Source } from "../staticmap.js";
+import { mockTileFetch } from "../test-helpers/tile-mock.js";
 
 // SF to LA, roughly north-south
 const sfToLa = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
