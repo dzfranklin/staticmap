@@ -7,11 +7,8 @@ type LineStringGeometry = {
 
 class StaticmapBuilder {
   private segments: string[] = [];
-  constructor(options: { source: string; pages?: boolean }) {
-    if (options.pages) {
-      this.segments.push("pages");
-    }
-    this.segments.push(`map:${options.source}`);
+  constructor(source: string) {
+    this.segments.push(`map:${source}`);
   }
 
   cmd(name: string, ...args: ArgValue[]): StaticmapBuilder {
@@ -44,11 +41,7 @@ class StaticmapBuilder {
 }
 
 export function staticmap(source: string): StaticmapBuilder {
-  return new StaticmapBuilder({ source });
-}
-
-export function staticmapPages(source: string): StaticmapBuilder {
-  return new StaticmapBuilder({ source, pages: true });
+  return new StaticmapBuilder(source);
 }
 
 function encodePolyline(
