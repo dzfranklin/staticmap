@@ -1,6 +1,6 @@
 {
   "osm": {
-    "attribution": "<a href=\"https://www.openstreetmap.org/copyright\">&copy; OpenStreetMap</a>",
+    "attribution": "&copy; OpenStreetMap",
     "maxzoom": 19,
     "minzoom": 0,
     "tileSize": 256,
