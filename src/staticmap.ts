@@ -243,57 +243,63 @@ export async function renderStaticMap(
   const minTileY = Math.floor(topLeftY / tilePixelSize);
   const maxTileY = Math.floor((topLeftY + options.size.height) / tilePixelSize);
 
-  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
-    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
-      const normalized = crs.normalizeTileCoord(tileX, tileY, zoom);
-      if (!normalized) continue;
+  async function loadAndDrawTile(tileX: number, tileY: number): Promise<void> {
+    const normalized = crs.normalizeTileCoord(tileX, tileY, zoom);
+    if (!normalized) return;
 
-      const buffer = await fetchTile(tiles, {
-        z: tileZ,
-        x: normalized.x,
-        y: normalized.y,
-        r: internalScale === 2 ? "@2x" : "",
-      });
-      if (!buffer) continue;
+    const buffer = await fetchTile(tiles, {
+      z: tileZ,
+      x: normalized.x,
+      y: normalized.y,
+      r: internalScale === 2 ? "@2x" : "",
+    });
+    if (!buffer) return;
 
-      const image = await loadImage(buffer);
+    const image = await loadImage(buffer);
 
-      // Draw coordinates scaled to canvas (internalScale applied here)
-      const drawX = Math.round(
-        (tileX * tilePixelSize - topLeftX) * internalScale,
-      );
-      const drawY = Math.round(
-        (tileY * tilePixelSize - topLeftY) * internalScale,
-      );
-      const drawX2 = Math.round(
-        ((tileX + 1) * tilePixelSize - topLeftX) * internalScale,
-      );
-      const drawY2 = Math.round(
-        ((tileY + 1) * tilePixelSize - topLeftY) * internalScale,
-      );
+    // Draw coordinates scaled to canvas (internalScale applied here)
+    const drawX = Math.round(
+      (tileX * tilePixelSize - topLeftX) * internalScale,
+    );
+    const drawY = Math.round(
+      (tileY * tilePixelSize - topLeftY) * internalScale,
+    );
+    const drawX2 = Math.round(
+      ((tileX + 1) * tilePixelSize - topLeftX) * internalScale,
+    );
+    const drawY2 = Math.round(
+      ((tileY + 1) * tilePixelSize - topLeftY) * internalScale,
+    );
 
-      ctx.drawImage(image, drawX, drawY, drawX2 - drawX, drawY2 - drawY);
+    ctx.drawImage(image, drawX, drawY, drawX2 - drawX, drawY2 - drawY);
 
-      if (options.debug) {
-        const dw = drawX2 - drawX;
-        const dh = drawY2 - drawY;
-        const label = `${tileZ}/${normalized.x}/${normalized.y}`;
-        const pad = 4 * internalScale;
+    if (options.debug) {
+      const dw = drawX2 - drawX;
+      const dh = drawY2 - drawY;
+      const label = `${tileZ}/${normalized.x}/${normalized.y}`;
+      const pad = 4 * internalScale;
 
-        ctx.save();
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([16, 16]);
-        ctx.strokeRect(drawX, drawY, dw, dh);
-        ctx.fillStyle = "black";
-        ctx.font = `${10 * internalScale}px monospace`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        ctx.fillText(label, drawX + pad, drawY + pad);
-        ctx.restore();
-      }
+      ctx.save();
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([16, 16]);
+      ctx.strokeRect(drawX, drawY, dw, dh);
+      ctx.fillStyle = "black";
+      ctx.font = `${10 * internalScale}px monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText(label, drawX + pad, drawY + pad);
+      ctx.restore();
     }
   }
+
+  const tilePromises: Promise<void>[] = [];
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      tilePromises.push(loadAndDrawTile(tileX, tileY));
+    }
+  }
+  await Promise.all(tilePromises);
 
   const nodes = buildScene(options, zoom, crs);
 

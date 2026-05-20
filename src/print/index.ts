@@ -14,6 +14,7 @@ import {
 import { drawFooter, FOOTER_H_MM } from "./footer.js";
 import z from "zod";
 import { printDuration } from "../metrics.js";
+import { logger } from "../logger.js";
 
 const A4_W_MM = 210;
 const A4_H_MM = 297;
@@ -112,11 +113,16 @@ async function _render(
   const grid = new Map<string, number>();
   pages.forEach((p, i) => grid.set(`${p.row},${p.col}`, i + 1));
 
+  const beforeMapRender = process.hrtime.bigint();
   const mapImages = await Promise.all(
     pages.map(async (page) => {
       const { commands: pageCmds } = parsePath(page.url);
       return renderStaticMap(buildOptions(pageCmds, source));
     }),
+  );
+  const mapRenderTime = Number(process.hrtime.bigint() - beforeMapRender) / 1e9;
+  logger.info(
+    `Rendered ${pages.length} map images in ${mapRenderTime.toFixed(2)}s`,
   );
 
   const A4_W_PT = mm(A4_W_MM);
@@ -220,6 +226,9 @@ async function _render(
 
   doc.end();
   await done;
+
+  const totalTime = Number(process.hrtime.bigint() - beforeMapRender) / 1e9;
+  logger.info(`Generated PDF in ${totalTime.toFixed(2)}s`);
 
   return Buffer.concat(chunks);
 }
