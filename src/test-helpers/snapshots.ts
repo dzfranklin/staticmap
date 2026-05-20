@@ -24,6 +24,7 @@ const snapshotUpdateNames: Set<string> = new Set(
         .filter(Boolean)
     : [],
 );
+const createNewSnapshots = !!process.env.CREATE_NEW_SNAPSHOTS;
 
 export function assertVisualSnapshot(
   snapshotDir: string,
@@ -35,6 +36,12 @@ export function assertVisualSnapshot(
   if (snapshotUpdateNames.has(name)) {
     writeSnapshot(snapshotDir, name, buffer);
     console.warn(`Updated snapshot for ${name}`);
+    return;
+  } else if (createNewSnapshots && !result.expected) {
+    writeSnapshot(snapshotDir, name, buffer);
+    console.warn(
+      `Created new snapshot for ${name} (it will be used in future test runs)`,
+    );
     return;
   }
 
@@ -69,7 +76,7 @@ export function snapshotTest(
     if ((err as NodeJS.ErrnoException).code === "ENOENT") {
       return {
         ...r,
-        message: `Missing snapshot for ${name}. Run with UPDATE_SNAPSHOTS=${name} to create it.`,
+        message: `Missing snapshot for ${name}. Run with CREATE_NEW_SNAPSHOTS=true to create it.`,
       };
     } else {
       throw err;
@@ -142,52 +149,141 @@ function writeSnapshotFailureArtifacts(
   );
 }
 
-export function assertPDFPageSnapshot(
+export async function assertPDFRegionSnapshot(
   snapshotDir: string,
   name: string,
   drawFn: (doc: InstanceType<typeof PDFDocument>) => void,
-  widthMm: number,
-  heightMm: number,
+  regionW: number,
+  regionH: number,
   dpi = 150,
 ): Promise<void> {
-  const PT_PER_MM = 72 / 25.4;
   const doc = new PDFDocument({
-    size: [widthMm * PT_PER_MM, heightMm * PT_PER_MM],
+    size: [regionW * 3, regionH * 3],
     margin: 0,
     autoFirstPage: true,
   });
-  registerFonts(doc);
+
   const chunks: Buffer[] = [];
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
-  const done = new Promise<void>((resolve) =>
-    doc.on("end", () => {
-      const pdfBuffer = Buffer.concat(chunks);
-      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-snapshot-"));
-      try {
-        const pdfPath = path.join(tmp, "page.pdf");
-        fs.writeFileSync(pdfPath, pdfBuffer);
-        execFileSync("pdftoppm", [
-          "-r",
-          String(dpi),
-          "-png",
-          "-f",
-          "1",
-          "-l",
-          "1",
-          pdfPath,
-          path.join(tmp, "out"),
-        ]);
-        const png = fs.readFileSync(path.join(tmp, "out-1.png"));
-        assertVisualSnapshot(snapshotDir, name, png);
-      } finally {
-        fs.rmSync(tmp, { recursive: true, force: true });
-      }
-      resolve();
-    }),
-  );
+
+  const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
+
+  registerFonts(doc);
+  doc.translate(regionW, regionH);
   drawFn(doc);
   doc.end();
-  return done;
+  await done;
+
+  const pdfBuffer = Buffer.concat(chunks);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-snapshot-"));
+  try {
+    const pdfPath = path.join(tmp, "page.pdf");
+    fs.writeFileSync(pdfPath, pdfBuffer);
+    execFileSync("pdftoppm", [
+      "-r",
+      String(dpi),
+      "-png",
+      "-f",
+      "1",
+      "-l",
+      "1",
+      pdfPath,
+      path.join(tmp, "out"),
+    ]);
+    const fullPng = PNG.sync.read(fs.readFileSync(path.join(tmp, "out-1.png")));
+
+    const scale = dpi / 72;
+    const x0 = Math.ceil(regionW * scale) - 1;
+    const y0 = Math.ceil(regionH * scale) - 1;
+    const x1 = Math.ceil(regionW * 2 * scale) + 1;
+    const y1 = Math.ceil(regionH * 2 * scale) + 1;
+
+    // Check nothing was drawn outside the region (ignoring the red border we drew)
+    const { width, height, data } = fullPng;
+    let escaped = false;
+    outer: for (let py = 0; py < height; py++) {
+      for (let px = 0; px < width; px++) {
+        if (px >= x0 && px < x1 && py >= y0 && py < y1) continue;
+        const idx = (py * width + px) * 4;
+        const r = data[idx]!;
+        const g = data[idx + 1]!;
+        const b = data[idx + 2]!;
+        const a = data[idx + 3]!;
+        if (a === 0 || (r === 255 && g === 255 && b === 255)) continue;
+        escaped = true;
+        expect
+          .soft(
+            false,
+            `draw escaped the allowed region at pixel (${px}, ${py})`,
+          )
+          .toBe(true);
+        break outer;
+      }
+    }
+
+    // Draw a 1px red border just outside the region on the full PNG for debugging
+    for (let px = x0 - 1; px <= x1; px++) {
+      for (const py of [y0 - 1, y1]) {
+        if (px < 0 || px >= width || py < 0 || py >= height) continue;
+        const idx = (py * width + px) * 4;
+        fullPng.data[idx] = 255;
+        fullPng.data[idx + 1] = 0;
+        fullPng.data[idx + 2] = 0;
+        fullPng.data[idx + 3] = 255;
+      }
+    }
+    for (let py = y0 - 1; py <= y1; py++) {
+      for (const px of [x0 - 1, x1]) {
+        if (px < 0 || px >= width || py < 0 || py >= height) continue;
+        const idx = (py * width + px) * 4;
+        fullPng.data[idx] = 255;
+        fullPng.data[idx + 1] = 0;
+        fullPng.data[idx + 2] = 0;
+        fullPng.data[idx + 3] = 255;
+      }
+    }
+
+    if (escaped) {
+      const failureArtifactDir = path.join(snapshotDir, "__artifacts__");
+      fs.mkdirSync(failureArtifactDir, { recursive: true });
+      const overflowPath = path.join(
+        failureArtifactDir,
+        `${name}.overflow.png`,
+      );
+      fs.writeFileSync(overflowPath, PNG.sync.write(fullPng));
+      expect
+        .soft(
+          false,
+          `draw escaped the allowed region for ${name}. Wrote full page to:\n  ${overflowPath}`,
+        )
+        .toBe(true);
+    }
+
+    // Crop to region + 1px on each side so the border is fully included
+    const cx0 = x0 - 1;
+    const cy0 = y0 - 1;
+    const cx1 = x1 + 1;
+    const cy1 = y1 + 1;
+    if (cx0 < 0 || cy0 < 0 || cx1 > width || cy1 > height) {
+      throw new Error(
+        `Invalid crop region: (${cx0}, ${cy0}) to (${cx1}, ${cy1}) with image size ${width}x${height}`,
+      );
+    }
+    const cropped = new PNG({ width: cx1 - cx0, height: cy1 - cy0 });
+    for (let cy = 0; cy < cropped.height; cy++) {
+      for (let cx = 0; cx < cropped.width; cx++) {
+        const srcIdx = ((cy0 + cy) * width + (cx0 + cx)) * 4;
+        const dstIdx = (cy * cropped.width + cx) * 4;
+        cropped.data[dstIdx] = data[srcIdx]!;
+        cropped.data[dstIdx + 1] = data[srcIdx + 1]!;
+        cropped.data[dstIdx + 2] = data[srcIdx + 2]!;
+        cropped.data[dstIdx + 3] = data[srcIdx + 3]!;
+      }
+    }
+    assertVisualSnapshot(snapshotDir, name, PNG.sync.write(cropped));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 function existingPDFSnapshotCount(snapshotDir: string, name: string): number {

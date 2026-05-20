@@ -13,19 +13,18 @@ export type DrawFooterOpts = {
   total: number;
   attribution: string | undefined;
   neighbors: { top?: number; bottom?: number; left?: number; right?: number };
-  footerX: number;
-  footerY: number;
   footerW: number;
   footerH: number;
 };
 
 export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
-  const { title, pageNum, total, attribution, neighbors, footerX, footerY, footerW, footerH } = opts;
+  const { title, pageNum, total, attribution, neighbors, footerW, footerH } =
+    opts;
   const fontSize = 9 * PT_PER_MM;
-  const textY = footerY + (footerH - fontSize) / 2;
+  const textY = (footerH - fontSize) / 2;
 
   doc.fillColor("#1f1f1f").font("SS3-Bold").fontSize(fontSize);
-  doc.text(title, footerX, textY, { lineBreak: false, continued: true });
+  doc.text(title, 0, textY, { lineBreak: false, continued: true });
   doc.font("SS3").text(` ${pageNum}/${total}`, { lineBreak: false });
 
   const cellMm = 4;
@@ -36,13 +35,13 @@ export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
     neighbors.left !== undefined ||
     neighbors.right !== undefined;
 
-  let rightEdge = footerX + footerW;
+  let rightEdge = footerW;
 
   if (hasNeighbors) {
     const gridW = mm(cellMm * 3 + gapMm * 2);
     const gridH = mm(cellMm * 3 + gapMm * 2);
     const gridX = rightEdge - gridW - mm(1);
-    const gridY = footerY + (footerH - gridH) / 2;
+    const gridY = (footerH - gridH) / 2;
     drawPageGrid(doc, pageNum, neighbors, gridX, gridY, cellMm, gapMm);
     rightEdge = gridX - mm(2);
   }

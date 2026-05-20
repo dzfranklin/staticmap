@@ -140,16 +140,13 @@ export async function renderPrintPdf(
     if (osStyle && page.nativeBounds) {
       const ticks = computeEdgeTicks(page.nativeBounds, imgWMm, imgHMm);
 
-      drawScaleBarH(
-        doc,
-        ticks.top,
-        "top",
-        EDGE_MM,
-        SCALE_BOX_MM,
-        EDGE_GAP_MM,
-        imgX,
-        0,
-      );
+      doc.save();
+      doc.translate(imgX, 0);
+      drawScaleBarH(doc, ticks.top, "top", EDGE_MM, SCALE_BOX_MM, EDGE_GAP_MM);
+      doc.restore();
+
+      doc.save();
+      doc.translate(imgX, imgY + imgHPt);
       drawScaleBarH(
         doc,
         ticks.bottom,
@@ -157,9 +154,11 @@ export async function renderPrintPdf(
         EDGE_MM,
         SCALE_BOX_MM,
         EDGE_GAP_MM,
-        imgX,
-        imgY + imgHPt,
       );
+      doc.restore();
+
+      doc.save();
+      doc.translate(0, imgY);
       drawScaleBarV(
         doc,
         ticks.left,
@@ -167,9 +166,11 @@ export async function renderPrintPdf(
         EDGE_MM,
         SCALE_BOX_MM,
         EDGE_GAP_MM,
-        0,
-        imgY,
       );
+      doc.restore();
+
+      doc.save();
+      doc.translate(imgX + imgWPt, imgY);
       drawScaleBarV(
         doc,
         ticks.right,
@@ -177,9 +178,8 @@ export async function renderPrintPdf(
         EDGE_MM,
         SCALE_BOX_MM,
         EDGE_GAP_MM,
-        imgX + imgWPt,
-        imgY,
       );
+      doc.restore();
     }
 
     const neighbors = {
@@ -188,21 +188,18 @@ export async function renderPrintPdf(
       left: grid.get(`${page.row},${page.col - 1}`),
       right: grid.get(`${page.row},${page.col + 1}`),
     };
-    const footerX = 0;
-    const footerY = imgY + imgHPt + edgePt;
-    const footerW = innerWPt;
-
+    doc.save();
+    doc.translate(0, imgY + imgHPt + edgePt);
     drawFooter(doc, {
       title,
       pageNum: i + 1,
       total,
       attribution,
       neighbors,
-      footerX,
-      footerY,
-      footerW,
+      footerW: innerWPt,
       footerH: footerPt,
     });
+    doc.restore();
 
     doc.restore(); // -- root
     if (debugMode) {

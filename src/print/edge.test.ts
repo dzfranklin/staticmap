@@ -1,7 +1,7 @@
 import path from "path";
 import { describe, it } from "vitest";
 import { computeEdgeTicks, drawScaleBarH, drawScaleBarV } from "./edge.js";
-import { assertPDFPageSnapshot } from "../test-helpers/snapshots.js";
+import { assertPDFRegionSnapshot } from "../test-helpers/snapshots.js";
 
 const snapshotDir = path.resolve(
   import.meta.dirname,
@@ -34,14 +34,14 @@ const londonBounds = {
 
 const ticks = computeEdgeTicks(londonBounds, imgWMm, imgHMm);
 
-const pageWMm = imgWMm + 2 * edgeTotalMm;
-const pageHMm = 2 * edgeTotalMm;
-const pageVWMm = 2 * edgeTotalMm;
-const pageVHMm = imgHMm + 2 * edgeTotalMm;
+const barHW = mm(imgWMm);
+const barHH = mm(2 * edgeTotalMm);
+const barVW = mm(2 * edgeTotalMm);
+const barVH = mm(imgHMm);
 
 describe("drawScaleBarH", () => {
   it("renders top scale bar", () =>
-    assertPDFPageSnapshot(
+    assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-h-top",
       (doc) => {
@@ -52,16 +52,14 @@ describe("drawScaleBarH", () => {
           EDGE_MM,
           SCALE_BOX_MM,
           EDGE_GAP_MM,
-          mm(edgeTotalMm),
-          0,
         );
       },
-      pageWMm,
-      pageHMm,
+      barHW,
+      barHH,
     ));
 
   it("renders bottom scale bar", () =>
-    assertPDFPageSnapshot(
+    assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-h-bottom",
       (doc) => {
@@ -72,18 +70,16 @@ describe("drawScaleBarH", () => {
           EDGE_MM,
           SCALE_BOX_MM,
           EDGE_GAP_MM,
-          mm(edgeTotalMm),
-          0,
         );
       },
-      pageWMm,
-      pageHMm,
+      barHW,
+      barHH,
     ));
 });
 
 describe("drawScaleBarV", () => {
   it("renders left scale bar", () =>
-    assertPDFPageSnapshot(
+    assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-v-left",
       (doc) => {
@@ -94,16 +90,14 @@ describe("drawScaleBarV", () => {
           EDGE_MM,
           SCALE_BOX_MM,
           EDGE_GAP_MM,
-          0,
-          mm(edgeTotalMm),
         );
       },
-      pageVWMm,
-      pageVHMm,
+      barVW,
+      barVH,
     ));
 
   it("renders right scale bar", () =>
-    assertPDFPageSnapshot(
+    assertPDFRegionSnapshot(
       snapshotDir,
       "scale-bar-v-right",
       (doc) => {
@@ -114,11 +108,9 @@ describe("drawScaleBarV", () => {
           EDGE_MM,
           SCALE_BOX_MM,
           EDGE_GAP_MM,
-          0,
-          mm(edgeTotalMm),
         );
       },
-      pageVWMm,
-      pageVHMm,
+      barVW,
+      barVH,
     ));
 });

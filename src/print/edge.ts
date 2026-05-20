@@ -140,18 +140,14 @@ export function drawScaleBarH(
   edgeMm: number,
   scaleBoxMm: number,
   edgeGapMm: number,
-  originX: number,
-  originY: number,
 ) {
   const barY0 = side === "top" ? mm(edgeMm + edgeGapMm) : 0;
   const labelCy =
-    side === "top"
-      ? originY + mm(edgeMm / 2)
-      : originY + mm(scaleBoxMm + edgeGapMm + edgeMm / 2);
+    side === "top" ? mm(edgeMm / 2) : mm(scaleBoxMm + edgeGapMm + edgeMm / 2);
 
   for (const tick of ticks) {
-    const bx = originX + mm(tick.offsetMm);
-    const by = originY + barY0;
+    const bx = mm(tick.offsetMm);
+    const by = barY0;
     const bw = mm(tick.spanMm);
     const bh = mm(scaleBoxMm);
 
@@ -196,19 +192,15 @@ export function drawScaleBarV(
   edgeMm: number,
   scaleBoxMm: number,
   edgeGapMm: number,
-  originX: number,
-  originY: number,
 ) {
   const barX0 = side === "left" ? mm(edgeMm + edgeGapMm) : 0;
   const labelCx =
-    side === "left"
-      ? originX + mm(edgeMm / 2)
-      : originX + mm(scaleBoxMm + edgeGapMm + edgeMm / 2);
+    side === "left" ? mm(edgeMm / 2) : mm(scaleBoxMm + edgeGapMm + edgeMm / 2);
   const rotateDeg = side === "left" ? -90 : 90;
 
   for (const tick of ticks) {
-    const bx = originX + barX0;
-    const by = originY + mm(tick.offsetMm);
+    const bx = barX0;
+    const by = mm(tick.offsetMm);
     const bw = mm(scaleBoxMm);
     const bh = mm(tick.spanMm);
 
