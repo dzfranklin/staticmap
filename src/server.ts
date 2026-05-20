@@ -10,12 +10,12 @@ import { logger } from "./logger.js";
 import {
   httpRequestDuration,
   mapRenderDuration,
-  pagesComputeDuration,
+  printDuration,
   startMetricsServer,
 } from "./metrics.js";
 import { HttpError } from "./errors.js";
 import { handleError, handleJsonError } from "./error-handlers.js";
-import { computePages } from "./pages.js";
+import { renderPrintPdf, type PrintRequest } from "./print.js";
 import schema from "./commands/schema.js";
 import { generateDocs as generateReference } from "./docs/generator.js";
 
@@ -31,11 +31,12 @@ app.use((req, res, next) => {
   const start = process.hrtime.bigint();
   res.on("finish", () => {
     const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
-    const route = req.path.startsWith("/pages/map:")
-      ? "/pages/map:*"
-      : req.path.startsWith("/map:")
-        ? "/map:*"
-        : req.path;
+    const route =
+      req.path === "/print"
+        ? "/print"
+        : req.path.startsWith("/map:")
+          ? "/map:*"
+          : req.path;
     httpRequestDuration.observe(
       { method: req.method, route, status_code: String(res.statusCode) },
       durationSec,
@@ -149,29 +150,29 @@ app.get(/^\/map:/, async (req, res) => {
   }
 });
 
-app.get(/^\/pages\/map:/, async (req, res) => {
+app.post("/print", express.json(), async (req, res) => {
   try {
+    const body = req.body as PrintRequest;
+    if (!body.map) {
+      throw new HttpError(400, "missing required field: map");
+    }
     const sources = await loadSources(sourcesFile);
-    const { sourceKey, commands } = parsePath(req.path.slice("/pages".length));
+    const { sourceKey } = parsePath(body.map.replace(/\s+/g, ""));
     const source = sources[sourceKey];
     if (!source) {
       throw new HttpError(400, `Unknown source: ${sourceKey}`);
     }
-    const computeStart = process.hrtime.bigint();
-    const result = computePages(sourceKey, commands, source);
-    pagesComputeDuration.observe(
-      { source_key: sourceKey, commands_length: String(commands.length) },
-      Number(process.hrtime.bigint() - computeStart) / 1e9,
+
+    const renderStart = process.hrtime.bigint();
+    const pdf = await renderPrintPdf(body, source, sourceKey);
+    printDuration.observe(
+      { source_key: sourceKey },
+      Number(process.hrtime.bigint() - renderStart) / 1e9,
     );
 
-    const origin = `${req.protocol}://${req.get("host")}`;
-    result.pages.forEach((p) => {
-      p.url = origin + p.url;
-    });
-
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Cache-Control", "public, max-age=" + 60 * 60 * 24);
-    res.status(200).json(result);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="map.pdf"');
+    res.status(200).send(pdf);
   } catch (error) {
     handleJsonError(error, res);
   }

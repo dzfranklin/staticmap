@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Print Playground</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 0 1rem;
+      }
+
+      form {
+        max-width: 700px;
+        margin: 2rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        font-weight: bold;
+        gap: 0.25rem;
+      }
+
+      label:has(input[type="number"]),
+      label:has(input[type="checkbox"]) {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+
+      input[type="number"],
+      input[type="checkbox"] {
+        width: auto;
+      }
+
+      textarea {
+        font-family: monospace;
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 0.75rem;
+        padding: 0.5rem 1.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      #error {
+        color: red;
+        margin-top: 0.5rem;
+      }
+
+      #viewer {
+        margin-top: 1.5rem;
+        width: 100%;
+        height: 80vh;
+        border: 1px solid #ccc;
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Print Playground</h1>
+    <form
+      onsubmit="
+        event.preventDefault();
+        generate();
+      "
+    >
+      <label
+        >Map path
+        <textarea name="map" rows="4">
+/map:os/color:%230000ff/width:10/borderColor:%23ffffff/borderWidth:6/labelColor:%23000000/labelSize:16/labelHaloColor:%23ffffff/labelHaloWidth:2/line:miv%7BIrbzUj%40%7DAjAyAfAg%40%5EGRUX%3FN%5BVIf%40y%40n%40WFWjAcAjC_EdE%7BIxC%7DFpAaEZ_CvDyH%60DyCjC%7BAv%40eBXEhFuK~%40q%40Z%7DBtEgHhGmGdJ_HvCkAxFqBzALbfAtv%40tcAqEeEscBmpBdYgKf%40aXmOcB_DcCaFyIqJ/label:Waypoint/point:-3.73539:57.13033/zoom:8</textarea
+        >
+      </label>
+
+      <label
+        >Title
+        <input name="title" type="text" placeholder="Map" value="Map" />
+      </label>
+
+      <label
+        >Margin (mm)
+        <input
+          name="margin"
+          type="number"
+          value="10"
+          min="0"
+          max="50"
+          step="1"
+        />
+      </label>
+
+      <label>
+        OS style
+        <input name="os_style" type="checkbox" checked />
+      </label>
+
+      <button type="submit">Generate PDF</button>
+    </form>
+
+    <div id="timings"></div>
+    <div id="error"></div>
+    <iframe id="viewer"></iframe>
+
+    <script>
+      async function generate() {
+        const form = document.querySelector("form");
+        const data = new FormData(form);
+
+        const map = data.get("map").replace(/\s+/g, "");
+        const title = data.get("title");
+        const margin = parseFloat(data.get("margin"));
+
+        const err = document.getElementById("error");
+        const timings = document.getElementById("timings");
+        const viewer = document.getElementById("viewer");
+
+        timings.textContent = "Requesting...";
+        err.textContent = "";
+        viewer.style.display = "none";
+        if (!map) {
+          err.textContent = "Map path is required.";
+          return;
+        }
+        try {
+          const start = performance.now();
+          const res = await fetch("/print", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              map,
+              title,
+              margin_mm: margin,
+              style: data.get("os_style") === "on" ? "os" : undefined,
+            }),
+          });
+          const end = performance.now();
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            err.textContent = body.error ?? `Error ${res.status}`;
+            timings.textContent = "";
+            return;
+          }
+          timings.textContent = `Generation time: ${((end - start) / 1000).toFixed(2)} s`;
+          const blob = await res.blob();
+          viewer.src = URL.createObjectURL(blob);
+          viewer.style.display = "block";
+        } catch (e) {
+          err.textContent = String(e);
+        }
+      }
+    </script>
+  </body>
+</html>

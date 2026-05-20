@@ -42,16 +42,6 @@ export const CenterCommand = defineGlobalCommand({
 });
 export type CenterCommand = InstanceType<typeof CenterCommand>;
 
-export const PageOverlapCommand = defineGlobalCommand({
-  type: "pageOverlap",
-  example: [50],
-  args: [arg("value", z.number())] as const,
-  applyGlobal: (options, { value }) => {
-    options.pageOverlap = value;
-  },
-});
-export type PageOverlapCommand = InstanceType<typeof PageOverlapCommand>;
-
 export const DebugCommand = defineGlobalCommand({
   type: "debug",
   args: [] as const,
@@ -66,6 +56,5 @@ export const GLOBAL_COMMANDS = [
   PaddingCommand,
   ZoomCommand,
   CenterCommand,
-  PageOverlapCommand,
   DebugCommand,
 ] satisfies GlobalCommandClass[];

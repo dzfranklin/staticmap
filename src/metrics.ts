@@ -20,11 +20,11 @@ export const tileFetchDuration = new Histogram({
   registers: [register],
 });
 
-export const pagesComputeDuration = new Histogram({
-  name: "pages_compute_duration_seconds",
-  help: "Pages compute duration in seconds",
-  labelNames: ["source_key", "commands_length"] as const,
-  buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+export const printDuration = new Histogram({
+  name: "print_duration_seconds",
+  help: "Print PDF generation duration in seconds",
+  labelNames: ["source_key"] as const,
+  buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30],
   registers: [register],
 });
 

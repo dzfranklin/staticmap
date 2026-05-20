@@ -12,11 +12,7 @@ import {
 } from "./commands/index.js";
 import { HttpError, ParseError } from "./errors.js";
 
-export {
-  Command,
-  PageOverlapCommand,
-  CenterCommand,
-} from "./commands/index.js";
+export { Command, CenterCommand } from "./commands/index.js";
 
 // # Command map
 

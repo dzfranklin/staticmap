@@ -304,7 +304,7 @@
         "y": 18
       },
       "id": 102,
-      "title": "Pages compute",
+      "title": "Print",
       "type": "row"
     },
     {
@@ -348,7 +348,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.5,  sum by (source_key, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5,  sum by (source_key, le) (rate(print_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
           "legendFormat": "p50 {{source_key}}",
           "refId": "A"
         },
@@ -357,7 +357,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.95, sum by (source_key, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (source_key, le) (rate(print_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
           "legendFormat": "p95 {{source_key}}",
           "refId": "B"
         },
@@ -366,12 +366,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.99, sum by (source_key, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (source_key, le) (rate(print_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
           "legendFormat": "p99 {{source_key}}",
           "refId": "C"
         }
       ],
-      "title": "Pages compute latency (p50/p95/p99) by source",
+      "title": "Print latency (p50/p95/p99) by source",
       "type": "timeseries"
     },
     {
@@ -388,7 +388,7 @@
             "lineWidth": 1,
             "fillOpacity": 0
           },
-          "unit": "s"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -415,30 +415,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.5,  sum by (commands_length, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
-          "legendFormat": "p50 cmds={{commands_length}}",
+          "expr": "sum by (source_key) (rate(print_duration_seconds_count{job=\"staticmap\"}[$__rate_interval]))",
+          "legendFormat": "{{source_key}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "histogram_quantile(0.95, sum by (commands_length, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
-          "legendFormat": "p95 cmds={{commands_length}}",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "histogram_quantile(0.99, sum by (commands_length, le) (rate(pages_compute_duration_seconds_bucket{job=\"staticmap\"}[$__rate_interval])))",
-          "legendFormat": "p99 cmds={{commands_length}}",
-          "refId": "C"
         }
       ],
-      "title": "Pages compute latency (p50/p95/p99) by commands length",
+      "title": "Print request rate",
       "type": "timeseries"
     },
     {

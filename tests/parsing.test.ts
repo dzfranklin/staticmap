@@ -7,7 +7,6 @@ import {
   LabelCommand,
   LineCommand,
   PaddingCommand,
-  PageOverlapCommand,
   PointCommand,
   SizeCommand,
   STYLE_COMMANDS,
@@ -284,13 +283,6 @@ describe("global commands", () => {
     });
   });
 
-  describe("pageOverlap", () => {
-    it("sets pageOverlap", () => {
-      const opts = parse(`/map:osm/pageOverlap:100/line:${sampleLine}`);
-      expect(opts.pageOverlap).toBe(100);
-    });
-  });
-
   describe("debug", () => {
     it("defaults to false", () => {
       expect(parse(`/map:osm/line:${sampleLine}`).debug).toBe(false);
@@ -374,7 +366,6 @@ describe("serializePath", () => {
       new PaddingCommand({ value: 12 }),
       new ZoomCommand({ value: 10.5 }),
       new CenterCommand({ lng: -122.4, lat: 37.77 }),
-      new PageOverlapCommand({ value: 50 }),
       new DebugCommand({}),
       // styles
       ...STYLE_COMMANDS.map((Cls) => Cls.default()),

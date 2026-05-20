@@ -57,7 +57,6 @@ export interface Options {
     lat: number;
   };
   features: Feature[];
-  pageOverlap?: number;
   debug?: boolean;
 }
 
@@ -322,18 +321,6 @@ export async function renderStaticMap(
     const s = internalScale;
     ctx.save();
     ctx.scale(s, s);
-
-    if (options.pageOverlap !== undefined) {
-      const overlap = options.pageOverlap;
-      ctx.beginPath();
-      ctx.rect(0, 0, w, h);
-      ctx.rect(overlap, overlap, w - overlap * 2, h - overlap * 2);
-      ctx.fillStyle = "rgba(255, 100, 0, 0.25)";
-      ctx.fill("evenodd");
-      ctx.strokeStyle = "rgba(255, 100, 0, 0.8)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
-    }
 
     const pad = options.padding ?? 0;
     ctx.beginPath();
