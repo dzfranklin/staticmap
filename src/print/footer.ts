@@ -1,6 +1,6 @@
 import { type Doc, mm } from "./util.js";
 
-export const FOOTER_MM = 10;
+export const FOOTER_MM = 20;
 
 export type DrawFooterOpts = {
   title: string;

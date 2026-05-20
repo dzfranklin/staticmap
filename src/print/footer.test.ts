@@ -1,8 +1,9 @@
 import path from "path";
 import { describe, it } from "vitest";
-import { drawFooter, type DrawFooterOpts } from "./footer.js";
+import { drawFooter, FOOTER_MM, type DrawFooterOpts } from "./footer.js";
 
 import { assertPDFRegionSnapshot } from "../test-helpers/snapshots.js";
+import { mm } from "./util.js";
 
 const snapshotDir = path.resolve(
   import.meta.dirname,
@@ -10,14 +11,10 @@ const snapshotDir = path.resolve(
   "footer.test.ts",
 );
 
-const PT_PER_MM = 72 / 25.4;
-const mm = (v: number) => v * PT_PER_MM;
+// approx A4
+const PAGE_W_MM = 210 - 20;
 
-const A4_W_MM = 210;
-const MARGIN_MM = 10;
-const FOOTER_MM = 10;
-
-const footerW = mm(A4_W_MM - 2 * MARGIN_MM);
+const footerW = mm(PAGE_W_MM);
 const footerH = mm(FOOTER_MM);
 
 const defaultOpts: DrawFooterOpts = {
