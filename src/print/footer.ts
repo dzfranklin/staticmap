@@ -14,9 +14,11 @@ export function drawFooter(doc: Doc, opts: DrawFooterOpts) {
   const { title, pageNum, total, attribution, neighbors, footerW, footerH } =
     opts;
   const fontSize = mm(9);
-  const textY = (footerH - fontSize) / 2;
 
   doc.fillColor("#1f1f1f").font("SS3-Bold").fontSize(fontSize);
+
+  const textY = (footerH - doc.currentLineHeight()) / 2;
+
   doc.text(title, 0, textY, { lineBreak: false, continued: true });
   doc.font("SS3").text(` ${pageNum}/${total}`, { lineBreak: false });
 
