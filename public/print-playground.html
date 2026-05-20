@@ -108,6 +108,11 @@
         <input name="os_style" type="checkbox" checked />
       </label>
 
+      <label>
+        Debug mode
+        <input name="debug" type="checkbox" />
+      </label>
+
       <button type="submit">Generate PDF</button>
     </form>
 
@@ -145,6 +150,7 @@
               title,
               margin_mm: margin,
               style: data.get("os_style") === "on" ? "os" : undefined,
+              debugMode: data.get("debug") === "on" ? true : undefined,
             }),
           });
           const end = performance.now();
