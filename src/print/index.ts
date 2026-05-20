@@ -116,6 +116,9 @@ export async function renderPrintPdf(
 
   const chunks: Buffer[] = [];
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+  doc.on("error", (err) => {
+    throw err;
+  });
   const done = new Promise<void>((resolve) => doc.on("end", resolve));
 
   const total = pages.length;
