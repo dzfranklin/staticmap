@@ -3,7 +3,7 @@ import { parsePath, buildOptions } from "../parser.js";
 import { renderStaticMap, type Source } from "../staticmap.js";
 import { HttpError } from "../errors.js";
 import { registerFonts } from "./fonts.js";
-import { computePages } from "./pages.js";
+import { computePages } from "./pagination.js";
 import { computeEdgeTicks, drawScaleBarH, drawScaleBarV } from "./edge.js";
 import { drawFooter } from "./footer.js";
 

@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import type { PageTile } from "./pages.js";
+import type { PageTile } from "./pagination.js";
 
 export interface Tick {
   major: boolean;

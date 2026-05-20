@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePages } from "./pages.js";
+import { computePages } from "./pagination.js";
 import { parsePath } from "../parser.js";
 import { SizeCommand } from "../commands/index.js";
 import { HttpError } from "../errors.js";
