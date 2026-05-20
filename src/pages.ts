@@ -166,5 +166,5 @@ export function computePages(
     }
   }
 
-  return { pages };
+  return { pages, attribution: source.attribution };
 }
