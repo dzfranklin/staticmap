@@ -23,13 +23,12 @@ const edgeTotalMm = EDGE_MM + SCALE_BOX_MM + EDGE_GAP_MM;
 const imgWMm = A4_W_MM - 2 * (MARGIN_MM + edgeTotalMm);
 const imgHMm = A4_H_MM - 2 * (MARGIN_MM + edgeTotalMm) - FOOTER_MM;
 
-// Realistic EPSG:27700 bounds: OS Explorer scale gives ~2km E × ~3km N per A4 page
 const londonBounds = {
   crs: "EPSG:27700",
-  minX: 530000,
-  maxX: 532000,
-  minY: 179000,
-  maxY: 182000,
+  minX: 530042,
+  maxX: 532042,
+  minY: 179060,
+  maxY: 182060,
 };
 
 const ticks = computeEdgeTicks(londonBounds, imgWMm, imgHMm);
