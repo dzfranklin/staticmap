@@ -67,6 +67,8 @@ export function snapshotTest(
 ): SnapshotResult {
   const r: SnapshotResult = { name, success: false };
 
+  r.actual = PNG.sync.read(buffer);
+
   const snapshotPath = path.join(snapshotDir, `${name}.png`);
   try {
     r.expected = PNG.sync.read(fs.readFileSync(snapshotPath));
@@ -81,7 +83,6 @@ export function snapshotTest(
     }
   }
 
-  r.actual = PNG.sync.read(buffer);
   if (
     r.expected.width !== r.actual.width ||
     r.expected.height !== r.actual.height
