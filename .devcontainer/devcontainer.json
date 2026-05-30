@@ -7,6 +7,9 @@
     "source=staticmap-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
   "forwardPorts": [3000],
+  "remoteEnv": {
+    "SOURCES_FILE": "${containerWorkspaceFolder}/sources.local.json"
+  },
   "customizations": {
     "vscode": {
       "extensions": ["Anthropic.claude-code", "vitest.explorer"]
