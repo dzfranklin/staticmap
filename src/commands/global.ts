@@ -32,6 +32,16 @@ export const ZoomCommand = defineGlobalCommand({
 });
 export type ZoomCommand = InstanceType<typeof ZoomCommand>;
 
+export const ScaleCommand = defineGlobalCommand({
+  type: "scale",
+  example: [25000],
+  args: [arg("value", z.number().int().positive())] as const,
+  applyGlobal: (options, { value }) => {
+    options.scale = value;
+  },
+});
+export type ScaleCommand = InstanceType<typeof ScaleCommand>;
+
 export const CenterCommand = defineGlobalCommand({
   type: "center",
   example: [-0.118, 51.509],
@@ -55,6 +65,7 @@ export const GLOBAL_COMMANDS = [
   SizeCommand,
   PaddingCommand,
   ZoomCommand,
+  ScaleCommand,
   CenterCommand,
   DebugCommand,
 ] satisfies GlobalCommandClass[];

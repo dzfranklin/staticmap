@@ -8,6 +8,7 @@ import {
   LineCommand,
   PaddingCommand,
   PointCommand,
+  ScaleCommand,
   SizeCommand,
   STYLE_COMMANDS,
   StyleCommand,
@@ -265,6 +266,65 @@ describe("global commands", () => {
   describe("zoom", () => {
     it("sets fractional zoom", () => {
       expect(parse(`/map:osm/zoom:10.5/line:${sampleLine}`).zoom).toBe(10.5);
+    });
+  });
+
+  describe("scale", () => {
+    const source27700 = {
+      tiles: ["https://example.com/{z}/{x}/{y}.png"],
+      crs: "EPSG:27700" as const,
+    };
+
+    function parse27700(path: string): Options {
+      const { commands } = parsePath(path);
+      return buildOptions(commands, source27700);
+    }
+
+    it("resolves scale:25000 to the correct fractional zoom on EPSG:27700", () => {
+      const opts = parse27700(`/map:os/scale:25000/line:${sampleLine}`);
+      // 25000 × (25.4/96) / 1000 = 6.6146 m/px; zoom = log2(896 / 6.6146) ≈ 7.0817
+      expect(opts.zoom).toBeCloseTo(7.0817, 3);
+    });
+
+    it("resolves scale:50000 to the correct fractional zoom on EPSG:27700", () => {
+      const opts = parse27700(`/map:os/scale:50000/line:${sampleLine}`);
+      // 50000 × (25.4/96) / 1000 = 13.229 m/px; zoom = log2(896 / 13.229) ≈ 6.0817
+      expect(opts.zoom).toBeCloseTo(6.0817, 3);
+    });
+
+    it("throws for scale on a non-EPSG:27700 source", () => {
+      expect(() => parse(`/map:osm/scale:25000/line:${sampleLine}`)).toThrow(
+        HttpError,
+      );
+    });
+
+    it("rejects scale:0", () => {
+      expect(() => parse27700(`/map:os/scale:0/line:${sampleLine}`)).toThrow(
+        HttpError,
+      );
+    });
+
+    it("rejects negative scale", () => {
+      expect(() => parse27700(`/map:os/scale:-1/line:${sampleLine}`)).toThrow(
+        HttpError,
+      );
+    });
+
+    it("zoom wins when both zoom and scale are present", () => {
+      const opts = parse27700(`/map:os/scale:25000/zoom:8/line:${sampleLine}`);
+      expect(opts.zoom).toBe(8);
+    });
+
+    it("round-trips scale command", () => {
+      const { sourceKey, commands } = parsePath(
+        `/map:os/scale:25000/line:${sampleLine}`,
+      );
+      const url = serializePath(sourceKey, commands);
+      expect(url).toContain("scale:25000");
+      const { commands: commands2 } = parsePath(url);
+      expect(buildOptions(commands, source27700)).toEqual(
+        buildOptions(commands2, source27700),
+      );
     });
   });
 

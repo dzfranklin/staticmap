@@ -1,4 +1,5 @@
 import type { Options, Source } from "./staticmap.js";
+import { getCrs } from "./staticmap.js";
 import {
   type Command,
   type FeatureModifiers,
@@ -105,6 +106,18 @@ export function buildOptions(commands: Command[], source: Source): Options {
 
   const resolved = partial as Options;
   resolved.source = source;
+
+  if (resolved.scale !== undefined && resolved.zoom === undefined) {
+    const crs = getCrs(resolved.source);
+    if (!crs.scaleToZoom) {
+      throw new HttpError(
+        400,
+        "scale command is not supported for this map source; use zoom instead",
+      );
+    }
+    resolved.zoom = crs.scaleToZoom(resolved.scale);
+  }
+
   resolved.features = [];
 
   // Pass 2: sequential — style and modifiers accumulate, features capture snapshots

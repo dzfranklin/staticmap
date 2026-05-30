@@ -52,6 +52,7 @@ export interface Options {
   };
   padding?: number;
   zoom?: number;
+  scale?: number;
   center?: {
     lng: number;
     lat: number;
@@ -76,11 +77,15 @@ export interface Crs {
   /** Convert pixel coords to native CRS units (metres for EPSG:27700, pixels for EPSG:3857). */
   pixelToNative(x: number, y: number, zoom: number): { x: number; y: number };
   tilePixelSize(zoom: number, sourceTileSize: number): number;
+  /** Integer zoom level to use when fetching tiles. */
+  tileZ(zoom: number): number;
   normalizeTileCoord(
     x: number,
     y: number,
     zoom: number,
   ): { x: number; y: number } | null;
+  /** Convert a print scale denominator to a zoom level. Only supported by some CRS. */
+  scaleToZoom?(scaleDenominator: number): number;
 }
 
 const epsg3857Crs: Crs = {
@@ -110,11 +115,13 @@ const epsg3857Crs: Crs = {
     return { x, y };
   },
   tilePixelSize(zoom, sourceTileSize) {
-    const tileZ = Math.round(zoom);
-    return sourceTileSize * Math.pow(2, zoom - tileZ);
+    return sourceTileSize * Math.pow(2, zoom - this.tileZ(zoom));
+  },
+  tileZ(zoom) {
+    return Math.round(zoom);
   },
   normalizeTileCoord(x, y, zoom) {
-    const tileZ = Math.round(zoom);
+    const tileZ = this.tileZ(zoom);
     const tilesAtZ = Math.pow(2, tileZ);
     if (y < 0 || y >= tilesAtZ) return null;
     return { x: mod(x, tilesAtZ), y };
@@ -124,20 +131,14 @@ const epsg3857Crs: Crs = {
 const epsg27700Crs: Crs = {
   lngLatToPixel(lng, lat, zoom) {
     const [easting, northing] = proj4("EPSG:4326", "EPSG:27700", [lng, lat]);
-    const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
-    if (res === undefined) {
-      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
-    }
+    const res = EPSG27700_RESOLUTIONS[0]! / Math.pow(2, zoom);
     return {
       x: (easting - EPSG27700_ORIGIN[0]) / res,
       y: (EPSG27700_ORIGIN[1] - northing) / res,
     };
   },
   pixelToLngLat(x, y, zoom) {
-    const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
-    if (res === undefined) {
-      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
-    }
+    const res = EPSG27700_RESOLUTIONS[0]! / Math.pow(2, zoom);
     const easting = x * res + EPSG27700_ORIGIN[0];
     const northing = EPSG27700_ORIGIN[1] - y * res;
     const [lngRaw, latRaw] = proj4("EPSG:27700", "EPSG:4326", [
@@ -150,20 +151,25 @@ const epsg27700Crs: Crs = {
     };
   },
   pixelToNative(x, y, zoom) {
-    const res = EPSG27700_RESOLUTIONS[Math.round(zoom)];
-    if (res === undefined) {
-      throw new HttpError(500, `Invalid EPSG:27700 zoom index: ${zoom}`);
-    }
+    const res = EPSG27700_RESOLUTIONS[0]! / Math.pow(2, zoom);
     return {
       x: x * res + EPSG27700_ORIGIN[0],
       y: EPSG27700_ORIGIN[1] - y * res,
     };
   },
-  tilePixelSize(_zoom, sourceTileSize) {
-    return sourceTileSize;
+  tilePixelSize(zoom, sourceTileSize) {
+    return sourceTileSize * Math.pow(2, zoom - this.tileZ(zoom));
+  },
+  tileZ(zoom) {
+    return Math.ceil(zoom);
   },
   normalizeTileCoord(x, y, _zoom) {
     return { x, y };
+  },
+  scaleToZoom(scaleDenominator) {
+    const MM_PER_PX = 25.4 / 96;
+    const targetMPerPx = (scaleDenominator * MM_PER_PX) / 1000;
+    return Math.log2(EPSG27700_RESOLUTIONS[0]! / targetMPerPx);
   },
 };
 
@@ -229,7 +235,7 @@ export async function renderStaticMap(
 
   const centerPixel = crs.lngLatToPixel(center.lng, center.lat, zoom);
   const tilePixelSize = crs.tilePixelSize(zoom, sourceTileSize);
-  const tileZ = Math.round(zoom);
+  const tileZ = crs.tileZ(zoom);
 
   const canvas = createCanvas(renderWidth, renderHeight);
   const ctx = canvas.getContext("2d");

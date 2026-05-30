@@ -1,7 +1,7 @@
 import path from "path";
 import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
-import { renderStaticMap, Options, Source } from "./staticmap.js";
+import { renderStaticMap, getCrs, Options, Source } from "./staticmap.js";
 import { DEFAULT_STYLE } from "./commands/index.js";
 import { assertVisualSnapshot } from "./test-helpers/snapshots.js";
 import { mockTileFetch } from "./test-helpers/tile-mock.js";
@@ -435,5 +435,65 @@ describe("renderStaticMap", () => {
     const png = PNG.sync.read(buffer);
     expect(png.width).toBe(options.size.width * 2);
     expect(png.height).toBe(options.size.height * 2);
+  });
+});
+
+describe("epsg3857Crs", () => {
+  const crs = getCrs({ tiles: [] });
+
+  describe("tileZ", () => {
+    it("rounds to nearest integer", () => {
+      expect(crs.tileZ(7.4)).toBe(7);
+      expect(crs.tileZ(7.6)).toBe(8);
+      expect(crs.tileZ(7)).toBe(7);
+    });
+  });
+});
+
+describe("epsg27700Crs", () => {
+  const crs = getCrs({ tiles: [], crs: "EPSG:27700" });
+
+  describe("scaleToZoom", () => {
+    it("converts 1:25000 to the correct fractional zoom", () => {
+      // 25000 × (25.4/96) / 1000 = 6.6146 m/px; log2(896 / 6.6146) ≈ 7.0817
+      expect(crs.scaleToZoom!(25000)).toBeCloseTo(7.0817, 3);
+    });
+
+    it("converts 1:50000 to the correct fractional zoom", () => {
+      // 50000 × (25.4/96) / 1000 = 13.229 m/px; log2(896 / 13.229) ≈ 6.0817
+      expect(crs.scaleToZoom!(50000)).toBeCloseTo(6.0817, 3);
+    });
+
+    it("returns integer 7 for OS native scale at zoom 7 (1:26457)", () => {
+      // Zoom 7 native: 7.0 m/px → scale denom = 7 × 1000 / (25.4/96) = 26456.69...
+      // Use the exact floating-point denominator so the inversion is exact
+      expect(crs.scaleToZoom!(26456.69291338583)).toBeCloseTo(7, 4);
+    });
+  });
+
+  describe("tileZ", () => {
+    it("ceils fractional zoom (fetches finer tiles for scale accuracy)", () => {
+      expect(crs.tileZ(7.082)).toBe(8);
+      expect(crs.tileZ(6.082)).toBe(7);
+    });
+
+    it("returns the zoom unchanged at integer values", () => {
+      expect(crs.tileZ(7)).toBe(7);
+      expect(crs.tileZ(0)).toBe(0);
+    });
+  });
+
+  describe("tilePixelSize", () => {
+    it("returns sourceTileSize at integer zoom (backward-compatible)", () => {
+      expect(crs.tilePixelSize(7, 256)).toBeCloseTo(256, 10);
+      expect(crs.tilePixelSize(0, 256)).toBeCloseTo(256, 10);
+    });
+
+    it("scales tiles down for fractional zoom (ceiled tileZ > zoom)", () => {
+      // zoom 7.082 → tileZ=8, scale factor = 2^(7.082-8) = 2^-0.918 < 1
+      const size = crs.tilePixelSize(7.082, 256);
+      expect(size).toBeLessThan(256);
+      expect(size).toBeCloseTo(256 * Math.pow(2, 7.082 - 8), 5);
+    });
   });
 });

@@ -205,4 +205,29 @@ describe("computePages", () => {
     );
     expect(high.pages.length).toBeGreaterThan(low.pages.length);
   });
+
+  it("scale command resolves before pagination on EPSG:27700 source", () => {
+    // scale:25000 should not throw "print requires a zoom command"
+    const { pages } = computePages(
+      "os",
+      commands(`/map:os/scale:25000/line:${londonSegment}`),
+      source27700,
+      pageSize,
+      50,
+    );
+    expect(pages.length).toBeGreaterThan(0);
+  });
+
+  it("scale command page urls preserve scale command", () => {
+    const { pages } = computePages(
+      "os",
+      commands(`/map:os/scale:25000/line:${londonSegment}`),
+      source27700,
+      pageSize,
+      50,
+    );
+    for (const page of pages) {
+      expect(page.url).toContain("scale:25000");
+    }
+  });
 });
