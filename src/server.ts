@@ -91,10 +91,6 @@ app.get("/", async (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
 
-app.get("/playground", (_req, res) => {
-  res.sendFile(path.join(publicDir, "playground.html"));
-});
-
 app.get("/schema.json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.status(200).json(schema);
