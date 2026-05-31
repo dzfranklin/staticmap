@@ -12,7 +12,11 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["Anthropic.claude-code", "vitest.explorer"]
+      "extensions": [
+        "Anthropic.claude-code",
+        "vitest.explorer",
+        "esbenp.prettier-vscode"
+      ]
     }
   }
 }
