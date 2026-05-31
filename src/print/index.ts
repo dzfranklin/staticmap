@@ -117,7 +117,9 @@ async function _render(
   const mapImages = await Promise.all(
     pages.map(async (page) => {
       const { commands: pageCmds } = parsePath(page.url);
-      return renderStaticMap(buildOptions(pageCmds, source));
+      const pageOpts = buildOptions(pageCmds, source);
+      if (osStyle) pageOpts.osGridSquares = true;
+      return renderStaticMap(pageOpts);
     }),
   );
   const mapRenderTime = Number(process.hrtime.bigint() - beforeMapRender) / 1e9;

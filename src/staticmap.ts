@@ -68,6 +68,7 @@ export interface Options {
   };
   features: Feature[];
   debug?: boolean;
+  osGridSquares?: boolean;
 }
 
 // All pixel coordinates are in source tile pixels (1 tile = sourceTileSize px).
@@ -336,6 +337,19 @@ export async function renderStaticMap(
   }
   ctx.restore();
 
+  if (options.osGridSquares && options.source.crs === "EPSG:27700") {
+    drawOsGridSquareLabels(
+      ctx,
+      crs,
+      zoom,
+      topLeftX,
+      topLeftY,
+      options.size.width,
+      options.size.height,
+      internalScale,
+    );
+  }
+
   if (options.debug) {
     const w = options.size.width;
     const h = options.size.height;
@@ -589,4 +603,118 @@ async function fetchTile(
 
 function mod(value: number, modulo: number): number {
   return ((value % modulo) + modulo) % modulo;
+}
+
+// BNG 500km grid squares, indexed by [column 0-4][row 0-4] (SW origin)
+// Row 0 = southernmost, col 0 = westernmost.
+// The standard layout omits I; letters map to A-Z skipping I.
+const BNG_500KM = [
+  ["V", "Q", "L", "F", "A"],
+  ["W", "R", "M", "G", "B"],
+  ["X", "S", "N", "H", "C"],
+  ["Y", "T", "O", "J", "D"],
+  ["Z", "U", "P", "K", "E"],
+];
+
+// Within a 500km square, 100km sub-squares use A-Z skipping I.
+const BNG_100KM_LETTERS = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
+
+function bngGridSquare(eastingM: number, northingM: number): string | null {
+  // BNG false origin is 1000km west and 500km north of true origin
+  const e = eastingM + 1000000;
+  const n = northingM + 500000;
+
+  const major500col = Math.floor(e / 500000);
+  const major500row = Math.floor(n / 500000);
+  if (
+    major500col < 0 ||
+    major500col > 4 ||
+    major500row < 0 ||
+    major500row > 4
+  ) {
+    return null;
+  }
+
+  const majorLetter = BNG_500KM[major500col]![major500row]!;
+
+  const eIn500 = e % 500000;
+  const nIn500 = n % 500000;
+  const minor100col = Math.floor(eIn500 / 100000);
+  const minor100row = Math.floor(nIn500 / 100000);
+  const minorIdx = minor100row * 5 + minor100col;
+  const minorLetter = BNG_100KM_LETTERS[minorIdx]!;
+
+  return majorLetter + minorLetter;
+}
+
+function drawOsGridSquareLabels(
+  ctx: ReturnType<ReturnType<typeof createCanvas>["getContext"]>,
+  crs: Crs,
+  zoom: number,
+  topLeftX: number,
+  topLeftY: number,
+  widthPx: number,
+  heightPx: number,
+  internalScale: number,
+): void {
+  // Compute which 100km grid squares are visible and where their top-left corners fall.
+  const GRID_M = 100000;
+
+  const tlNative = crs.pixelToNative(topLeftX, topLeftY, zoom);
+  const brNative = crs.pixelToNative(
+    topLeftX + widthPx,
+    topLeftY + heightPx,
+    zoom,
+  );
+
+  const eMin = Math.min(tlNative.x, brNative.x);
+  const eMax = Math.max(tlNative.x, brNative.x);
+  const nMin = Math.min(tlNative.y, brNative.y);
+  const nMax = Math.max(tlNative.y, brNative.y);
+
+  const firstE = Math.floor(eMin / GRID_M) * GRID_M;
+  const firstN = Math.ceil(nMax / GRID_M) * GRID_M; // northings decrease downward in image
+
+  ctx.save();
+  ctx.scale(internalScale, internalScale);
+  const FONT_SIZE = Math.round(32);
+  ctx.font = `bold ${FONT_SIZE}px "Source Sans 3"`;
+  ctx.fillStyle = "#0295cfac";
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+
+  const INSET_X = 9;
+  const INSET_Y = 0;
+
+  const seenSquares = new Set<string>();
+
+  for (let n = firstN; n >= nMin - GRID_M; n -= GRID_M) {
+    for (let e = firstE; e <= eMax; e += GRID_M) {
+      // e and n are on 100km boundaries; n is the top (max northing) of this cell
+      const square = bngGridSquare(e, n - GRID_M);
+      if (!square || seenSquares.has(square)) continue;
+      seenSquares.add(square);
+
+      // Convert top-left corner of this 100km square to pixel space
+      const [lng, lat] = proj4("EPSG:27700", "EPSG:4326", [e, n]);
+      const { x: px, y: py } = crs.lngLatToPixel(lng, lat, zoom);
+
+      // Convert CRS pixel coords to canvas coords
+      const canvasX = px - topLeftX;
+      const canvasY = py - topLeftY;
+
+      // Clamp to visible area (show label at top-left of the visible part of this square)
+      const labelX = Math.max(canvasX, INSET_X);
+      const labelY = Math.max(canvasY, INSET_Y);
+
+      // Only draw if within image bounds
+      const imgW = widthPx;
+      const imgH = heightPx;
+      if (labelX >= imgW || labelY >= imgH) continue;
+
+      ctx.fillText(square, labelX, labelY);
+    }
+  }
+
+  ctx.restore();
 }
