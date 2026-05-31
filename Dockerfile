@@ -17,5 +17,6 @@ COPY --from=builder /app/dist ./app/dist
 COPY sources.json /sources.json
 COPY public /public
 COPY fonts /app/fonts
+COPY os-logo-maps@2x.png /app/
 EXPOSE 3000
 ENTRYPOINT ["node", "--enable-source-maps", "/app/dist/server.js"]
