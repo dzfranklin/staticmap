@@ -46,20 +46,22 @@ function labelParts(
   return { prefix: showPrefix ? String(hundredKm) : "", main };
 }
 
-function buildTicks(
-  valuesM: number[],
-  toMm: (v: number) => number,
-  totalMm: number,
-): Tick[] {
+function buildTicks(valuesM: number[], toMm: (v: number) => number): Tick[] {
   let prevKm: number | null = null;
-  return valuesM.map((v, i) => {
+  const ticks: Tick[] = [];
+  for (let i = 0; i < valuesM.length; i++) {
+    const v = valuesM[i]!;
+    const isLast = i + 1 >= valuesM.length;
+    // Drop the last segment: it spans to the image edge rather than the next
+    // grid crossing, making it a partial segment of unknown width.
+    if (isLast) break;
     const major = v % 1000 === 0;
     const offset = toMm(v);
-    const next = i + 1 < valuesM.length ? toMm(valuesM[i + 1]!) : totalMm;
+    const nextOffset = toMm(valuesM[i + 1]!);
     const tick: Tick = {
       major,
       offsetMm: offset,
-      spanMm: next - offset,
+      spanMm: nextOffset - offset,
       filled: Math.floor(v / 100) % 2 === 0,
     };
     if (major) {
@@ -68,8 +70,9 @@ function buildTicks(
       tick.labelMain = main;
       prevKm = v;
     }
-    return tick;
-  });
+    ticks.push(tick);
+  }
+  return ticks;
 }
 
 export function computeEdgeTicks(
@@ -85,10 +88,10 @@ export function computeEdgeTicks(
   const eVals = gridCrossings(eMin, eMax);
   const nValsDesc = gridCrossings(nMin, nMax).reverse();
   return {
-    top: buildTicks(eVals, eToMm, imgWMm),
-    bottom: buildTicks(eVals, eToMm, imgWMm),
-    left: buildTicks(nValsDesc, nToMm, imgHMm),
-    right: buildTicks(nValsDesc, nToMm, imgHMm),
+    top: buildTicks(eVals, eToMm),
+    bottom: buildTicks(eVals, eToMm),
+    left: buildTicks(nValsDesc, nToMm),
+    right: buildTicks(nValsDesc, nToMm),
   };
 }
 
