@@ -7,6 +7,9 @@ import type { Style } from "./style.js";
 import { logger } from "./logger.js";
 import { HttpError } from "./errors.js";
 import { tileFetchDuration } from "./metrics.js";
+import { readFile } from "fs/promises";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 const MERCATOR_MAX_LAT = 85.05112878;
 
@@ -18,6 +21,12 @@ const EPSG27700_RESOLUTIONS = [
 const EPSG27700_ORIGIN: [number, number] = [-238375.0, 1376256.0];
 
 proj4.defs("EPSG:27700", EPSG27700_PROJ);
+
+const osLogoPath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "os-logo-maps@2x.png",
+);
 
 export interface Source {
   tiles: string[];
@@ -342,6 +351,21 @@ export async function renderStaticMap(
     ctx.fill("evenodd");
 
     ctx.restore();
+  }
+
+  if (options.source.attribution?.toLowerCase().includes("contains os data")) {
+    const logoBuffer = await readFile(osLogoPath);
+    const logo = await loadImage(logoBuffer);
+    const inset = 8 * internalScale;
+    const logoWidth = (logo.width / 2) * internalScale;
+    const logoHeight = (logo.height / 2) * internalScale;
+    ctx.drawImage(
+      logo,
+      inset,
+      renderHeight - logoHeight - inset,
+      logoWidth,
+      logoHeight,
+    );
   }
 
   const buffer = canvas.toBuffer("image/png");
