@@ -18,7 +18,7 @@ const sources: Record<string, Source> = {
     tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],
     tileSize: 256,
     crs: "EPSG:27700",
-    attribution: "© Crown copyright and database rights 2026",
+    attribution: "Contains OS data © Crown copyright and database rights 2026",
   },
   osm: {
     tiles: ["https://tiles.example.com/{z}/{x}/{y}.png"],

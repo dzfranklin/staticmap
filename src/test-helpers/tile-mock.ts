@@ -1,14 +1,14 @@
 import { createCanvas } from "canvas";
 import { afterEach, beforeEach } from "vitest";
 
-export function makeTile(z: number, x: number, y: number): Buffer {
+export function makeTile(_z: number, x: number, y: number): Buffer {
   const size = 256;
   const dpi = 2;
   const canvas = createCanvas(size * dpi, size * dpi);
   const ctx = canvas.getContext("2d");
   ctx.scale(dpi, dpi);
   ctx.antialias = "none";
-  ctx.fillStyle = `rgb(${(x * 40) % 255}, ${(y * 80) % 255}, ${(z * 60) % 255})`;
+  ctx.fillStyle = (x + y) % 2 === 0 ? "#f0f0f0" : "#e0e0e0";
   ctx.fillRect(0, 0, size, size);
   return canvas.toBuffer("image/png");
 }
